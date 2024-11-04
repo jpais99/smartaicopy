@@ -15,6 +15,7 @@ const config: Config = {
         secondary: 'rgb(var(--secondary) / <alpha-value>)',
         background: 'rgb(var(--background) / <alpha-value>)',
         foreground: 'rgb(var(--foreground) / <alpha-value>)',
+        accent: 'rgb(var(--accent) / <alpha-value>)',
       },
     },
   },

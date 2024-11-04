@@ -10,6 +10,7 @@
     --secondary: 100 116 139; /* slate-500 */
     --background: 255 255 255;
     --foreground: 15 23 42;
+    --accent: 247 193 62; /* golden ochre */
   }
 
   [data-theme='dark'] {
@@ -18,17 +19,18 @@
     --secondary: 148 163 184;
     --background: 15 23 42;
     --foreground: 248 250 252;
+    --accent: 247 193 62; /* keeping same golden ochre in dark mode */
   }
 
   body {
-    @apply bg-white text-gray-900 antialiased;
+    @apply bg-background text-foreground antialiased;
   }
 
   /* Focus styles using Tailwind classes */
   *:focus-visible {
-    @apply outline-none ring-2 ring-blue-500 ring-offset-2;
+    @apply outline-none ring-2 ring-primary ring-offset-2;
   }
-
+  
   html {
     @apply scroll-smooth;
   }

@@ -22,9 +22,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
       <body className={`${inter.className} min-h-screen flex flex-col`}>
         <Header />
         <main className="flex-grow">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            {children}
-          </div>
+          {children}
         </main>
         <Footer />
       </body>
