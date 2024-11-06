@@ -1,6 +1,11 @@
 // src/components/layout/Header.tsx
+'use client';
+
 import Link from 'next/link';
 import Button from '@/components/common/Button';
+
+// TODO: Replace with actual auth state once implemented
+const isLoggedIn = false; // This will come from auth context later
 
 export default function Header() {
   return (
@@ -20,24 +25,37 @@ export default function Header() {
             </Link>
           </div>
           <nav 
-            className="flex items-center space-x-8" 
+            className="flex items-center space-x-4" 
             role="navigation" 
             aria-label="Main navigation"
           >
-            <Link 
-              href="/pricing" 
-              className="text-secondary hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
-            >
-              Pricing
-            </Link>
-            <Button 
-              href="/optimize" 
-              variant="primary"
-              size="sm"
-              aria-label="Start optimizing your content"
-            >
-              Optimize Content
-            </Button>
+            {isLoggedIn ? (
+              <>
+                <Link href="/dashboard">
+                  <Button variant="secondary" size="sm">
+                    Dashboard
+                  </Button>
+                </Link>
+                <Link href="/optimize">
+                  <Button variant="primary" size="sm">
+                    Optimize Content
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/login">
+                  <Button variant="secondary" size="sm">
+                    Login
+                  </Button>
+                </Link>
+                <Link href="/optimize">
+                  <Button variant="primary" size="sm">
+                    Optimize Content
+                  </Button>
+                </Link>
+              </>
+            )}
           </nav>
         </div>
       </div>

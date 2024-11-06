@@ -19,9 +19,12 @@ export default function OptimizeForm({ onSubmit }: OptimizeFormProps) {
   const [error, setError] = useState('');
   const [truncated, setTruncated] = useState(false);
 
-  // Calculate word count and handle content truncation
+  // Clean incoming content and preserve formatting
   const processContent = (text: string) => {
-    const words = text.trim().split(/\s+/);
+    // Remove any content that looks like a title at the start
+    const cleanedText = text.replace(/^(?:#+ |.*\n={3,}|.*\n-{3,})/g, '').trim();
+    
+    const words = cleanedText.split(/\s+/);
     if (words.length > 3000) {
       const truncatedText = words.slice(0, 3000).join(' ');
       setContent(truncatedText);
@@ -29,17 +32,10 @@ export default function OptimizeForm({ onSubmit }: OptimizeFormProps) {
       return truncatedText;
     }
     setTruncated(false);
-    return text;
+    return cleanedText;
   };
 
-  const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
-  const price = wordCount <= 1500 ? 25 : 50;
-
-  // Form validation
-  const isValid = content.trim().length > 0;
-
-  // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValid) return;
     
@@ -47,9 +43,11 @@ export default function OptimizeForm({ onSubmit }: OptimizeFormProps) {
     setError('');
 
     try {
+      const contentToSubmit = content.replace(/^(?:#+ |.*\n={3,}|.*\n-{3,})/g, '').trim();
+      
       if (onSubmit) {
         await onSubmit({
-          content,
+          content: contentToSubmit,
           wordCount,
           price
         });
@@ -61,9 +59,71 @@ export default function OptimizeForm({ onSubmit }: OptimizeFormProps) {
     }
   };
 
+  const convertMarkdownToHtml = (text: string) => {
+    // Convert markdown bold to HTML
+    return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  };
+
+  const preserveParagraphBreaks = (text: string) => {
+    // Convert single newlines to spaces (like markdown)
+    // Convert double newlines to paragraphs
+    return text
+      .replace(/\n\n+/g, '</p><p>')
+      .replace(/\n/g, ' ')
+      .trim();
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    
+    let processedContent = '';
+    const plainText = e.clipboardData.getData('text/plain');
+    const htmlContent = e.clipboardData.getData('text/html');
+    
+    if (htmlContent) {
+      // Create a temporary container to parse HTML
+      const temp = document.createElement('div');
+      temp.innerHTML = htmlContent;
+      
+      // Clean up the HTML content
+      temp.querySelectorAll('*').forEach(element => {
+        // Keep only specific formatting
+        if (!['B', 'STRONG', 'P', 'BR'].includes(element.tagName)) {
+          // Replace element with its text content
+          const text = element.textContent || '';
+          element.replaceWith(text);
+        }
+      });
+      
+      processedContent = temp.innerHTML;
+    } else {
+      // Handle plain text with potential markdown
+      processedContent = plainText;
+      
+      // Convert markdown formatting
+      processedContent = convertMarkdownToHtml(processedContent);
+      
+      // Preserve paragraph breaks
+      processedContent = `<p>${preserveParagraphBreaks(processedContent)}</p>`;
+    }
+    
+    // Process for word count and truncation
+    const textOnlyContent = processedContent.replace(/<[^>]+>/g, ' ').trim();
+    const processed = processContent(textOnlyContent);
+    setContent(processed);
+    
+    // Insert the HTML content
+    const targetDiv = e.currentTarget as HTMLDivElement;
+    targetDiv.innerHTML = processedContent;
+  };
+
+  const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
+  const price = wordCount <= 1500 ? 25 : 50;
+  const isValid = content.trim().length > 0;
+
   return (
     <Card variant="primary">
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleFormSubmit} className="space-y-6">
         <div className="space-y-2">
           <label
             htmlFor="content"
@@ -71,24 +131,33 @@ export default function OptimizeForm({ onSubmit }: OptimizeFormProps) {
           >
             Your Content
           </label>
-          <textarea
-            id="content"
-            value={content}
-            onChange={(e) => {
-              const processed = processContent(e.target.value);
-              setContent(processed);
-            }}
+          <div
             className={`
               w-full min-h-[200px] p-4
               bg-background
               border rounded-lg
-              text-foreground placeholder-secondary
+              text-foreground
               transition-colors
               ${error ? 'border-red-500' : 'border-foreground/20 hover:border-foreground/30'}
+              overflow-auto
             `.trim()}
-            placeholder="Paste your content here (maximum 3000 words)..."
-            aria-describedby="word-count"
-          />
+          >
+            <div
+              contentEditable
+              id="content"
+              role="textbox"
+              aria-multiline="true"
+              aria-label="Content input"
+              className="outline-none min-h-[180px]"
+              onInput={(e) => {
+                const text = e.currentTarget.innerText;
+                const processed = processContent(text);
+                setContent(processed);
+              }}
+              onPaste={handlePaste}
+              suppressContentEditableWarning={true}
+            />
+          </div>
           <div className="flex flex-col space-y-2">
             <div className="flex justify-between items-center">
               <span id="word-count" className="text-secondary">

@@ -1,6 +1,6 @@
 // src/app/optimize/page.tsx
 import { Metadata } from 'next';
-import OptimizeForm from '@/components/sections/optimize/OptimizeForm';
+import OptimizeSection from '@/components/sections/optimize/OptimizeSection';
 
 export const metadata: Metadata = {
   title: 'Optimize Your Content - SmartAICopy',
@@ -26,9 +26,7 @@ export default function OptimizePage() {
           </p>
         </div>
 
-        <div className="max-w-3xl mx-auto">
-          <OptimizeForm />
-        </div>
+        <OptimizeSection />
       </div>
     </section>
   );
