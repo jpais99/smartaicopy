@@ -3,11 +3,11 @@
 
 import Link from 'next/link';
 import Button from '@/components/common/Button';
-
-// TODO: Replace with actual auth state once implemented
-const isLoggedIn = false; // This will come from auth context later
+import { useAuth } from '@/lib/auth/auth-context';
 
 export default function Header() {
+  const { isLoggedIn, logout } = useAuth();
+
   return (
     <header 
       className="w-full bg-background border-b border-foreground/10 sticky top-0 z-50"
@@ -31,14 +31,16 @@ export default function Header() {
           >
             {isLoggedIn ? (
               <>
+                <Button 
+                  variant="secondary" 
+                  size="sm"
+                  onClick={() => logout()}
+                >
+                  Logout
+                </Button>
                 <Link href="/dashboard">
-                  <Button variant="secondary" size="sm">
-                    Dashboard
-                  </Button>
-                </Link>
-                <Link href="/optimize">
                   <Button variant="primary" size="sm">
-                    Optimize Content
+                    Dashboard
                   </Button>
                 </Link>
               </>

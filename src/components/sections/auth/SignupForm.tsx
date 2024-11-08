@@ -1,4 +1,4 @@
-// src/components/sections/auth/LoginForm.tsx
+// src/components/sections/auth/SignupForm.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -7,38 +7,43 @@ import { useRouter } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
-import { useAuth } from '@/lib/auth/auth-context';
 
-const REMEMBERED_EMAIL_KEY = 'smartaicopy_remembered_email';
-
-export default function LoginForm() {
+export default function SignupForm() {
   const router = useRouter();
-  const { login } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Load remembered email on mount
   useEffect(() => {
-    const rememberedEmail = localStorage.getItem(REMEMBERED_EMAIL_KEY);
-    if (rememberedEmail) {
-      setEmail(rememberedEmail);
-      setRememberMe(true);
-    }
     setMounted(true);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    // Client-side validation
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const res = await fetch('/api/auth/login', {
+      console.log('Attempting signup...');
+      
+      const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -47,22 +52,19 @@ export default function LoginForm() {
       });
 
       const data = await res.json();
+      console.log('Server response status:', res.status);
+      console.log('Server response data:', data);
 
       if (!res.ok) {
-        throw new Error(data.error || 'Login failed');
+        throw new Error(data.error || 'Signup failed');
       }
 
-      // Handle remember me
-      if (rememberMe) {
-        localStorage.setItem(REMEMBERED_EMAIL_KEY, email);
-      } else {
-        localStorage.removeItem(REMEMBERED_EMAIL_KEY);
-      }
-
-      login(email);
+      // Successful signup
       router.push('/dashboard');
+      router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred during login');
+      console.error('Detailed signup error:', err);
+      setError(err instanceof Error ? err.message : 'An error occurred during signup');
     } finally {
       setIsLoading(false);
     }
@@ -116,7 +118,7 @@ export default function LoginForm() {
                 id="password"
                 type={showPassword ? "text" : "password"}
                 required
-                autoComplete="current-password"
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className={`
@@ -142,18 +144,42 @@ export default function LoginForm() {
             </div>
           </div>
 
-          <div className="flex items-center">
-            <input
-              id="remember-me"
-              name="remember-me"
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-accent focus:ring-accent"
-            />
-            <label htmlFor="remember-me" className="ml-2 block text-sm text-secondary">
-              Remember me on this browser
+          <div>
+            <label
+              htmlFor="confirmPassword"
+              className="block text-sm font-medium text-foreground mb-2"
+            >
+              Confirm Password
             </label>
+            <div className="relative">
+              <input
+                id="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                required
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className={`
+                  block w-full px-3 py-2
+                  bg-background
+                  border rounded-lg
+                  text-foreground placeholder-secondary
+                  focus:outline-none focus:ring-2 focus:ring-accent
+                  transition-colors
+                  ${error ? 'border-red-500' : 'border-foreground/20 hover:border-foreground/30'}
+                `.trim()}
+                placeholder="••••••••"
+                disabled={isLoading}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-secondary hover:text-foreground"
+                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+              >
+                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -170,26 +196,18 @@ export default function LoginForm() {
             disabled={isLoading}
             isLoading={isLoading}
           >
-            {isLoading ? 'Signing in...' : 'Sign in'}
+            {isLoading ? 'Creating Account...' : 'Create Account'}
           </Button>
         </div>
 
-        <div className="text-center space-y-2 text-sm pt-2">
+        <div className="text-center text-sm pt-2">
           <p className="text-secondary">
-            Don't have an account?{' '}
+            Already have an account?{' '}
             <Link
-              href="/signup"
+              href="/login"
               className="text-accent hover:text-accent/80 transition-colors"
             >
-              Create one
-            </Link>
-          </p>
-          <p>
-            <Link
-              href="/forgot-password"
-              className="text-accent hover:text-accent/80 transition-colors"
-            >
-              Forgot your password?
+              Sign in
             </Link>
           </p>
         </div>
