@@ -24,15 +24,20 @@ export default function OptimizeResults({ results, onReset }: OptimizeResultsPro
   };
 
   // Add proper paragraph spacing when copying
-  const copyToClipboard = async (text: string, field: string) => {
+  const copyToClipboard = async (text: string | string[], field: string) => {
     try {
       // For content field, add double line breaks between paragraphs
-      const textToCopy = field === 'content' 
-        ? formatContent(text)
-            .split(/\n+/)
-            .filter(para => para.trim())
-            .join('\n\n')
-        : formatContent(text);
+      let textToCopy: string;
+      if (field === 'content') {
+        textToCopy = formatContent(text as string)
+          .split(/\n+/)
+          .filter(para => para.trim())
+          .join('\n\n');
+      } else if (field === 'keywords') {
+        textToCopy = (text as string[]).map(k => formatContent(k)).join(', ');
+      } else {
+        textToCopy = formatContent(text as string);
+      }
       
       await navigator.clipboard.writeText(textToCopy);
       setCopiedField(field);
@@ -106,7 +111,15 @@ export default function OptimizeResults({ results, onReset }: OptimizeResultsPro
           </div>
 
           <div>
-            <h3 className="text-lg font-medium mb-2">Keywords</h3>
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-lg font-medium">Keywords</h3>
+              <Button
+                onClick={() => copyToClipboard(results.suggestions.keywords, 'keywords')}
+                variant="secondary"
+              >
+                {copiedField === 'keywords' ? 'Copied!' : 'Copy'}
+              </Button>
+            </div>
             <div className="flex flex-wrap gap-2">
               {results.suggestions.keywords.map((keyword, index) => (
                 <span

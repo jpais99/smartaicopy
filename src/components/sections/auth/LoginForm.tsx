@@ -3,7 +3,6 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
@@ -12,7 +11,6 @@ import { useAuth } from '@/lib/auth/auth-context';
 const REMEMBERED_EMAIL_KEY = 'smartaicopy_remembered_email';
 
 export default function LoginForm() {
-  const router = useRouter();
   const { login } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [email, setEmail] = useState('');
@@ -59,8 +57,8 @@ export default function LoginForm() {
         localStorage.removeItem(REMEMBERED_EMAIL_KEY);
       }
 
-      login(email);
-      router.push('/dashboard');
+      // Just call login and let AuthContext handle navigation
+      await login(email);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred during login');
     } finally {

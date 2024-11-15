@@ -10,9 +10,14 @@ import { OptimizeResponse } from '@/lib/api/content/types';
 interface OptimizePreviewProps {
   results: OptimizeResponse;
   onPurchase: () => void;
+  isGuest?: boolean;
 }
 
-export default function OptimizePreview({ results, onPurchase }: OptimizePreviewProps) {
+export default function OptimizePreview({ 
+  results, 
+  onPurchase,
+  isGuest = false
+}: OptimizePreviewProps) {
   const [showPayment, setShowPayment] = useState(false);
 
   // Get first two sentences for preview, excluding any markdown-style formatting
@@ -29,6 +34,20 @@ export default function OptimizePreview({ results, onPurchase }: OptimizePreview
 
   const previewContent = getPreviewContent(results.optimizedContent);
   const price = results.wordCount <= 1500 ? 25 : 50;
+
+  const handlePurchaseClick = () => {
+    // Call parent's handlePurchaseAttempt first
+    onPurchase();
+    // Show payment modal only if we're logged in or in guest mode
+    if (isGuest) {
+      setShowPayment(true);
+    }
+  };
+
+  const handlePaymentComplete = () => {
+    setShowPayment(false);
+    onPurchase(); // This will now trigger handlePurchaseComplete in parent
+  };
 
   return (
     <>
@@ -57,7 +76,11 @@ export default function OptimizePreview({ results, onPurchase }: OptimizePreview
               </ul>
 
               <div className="pt-4">
-                <Button onClick={() => setShowPayment(true)} className="w-full">
+                <div className="flex justify-between items-center mb-3 text-sm text-secondary">
+                  <span>Based on submitted content:</span>
+                  <span>{results.wordCount.toLocaleString()} words</span>
+                </div>
+                <Button onClick={handlePurchaseClick} className="w-full">
                   Purchase Full Results (${price})
                 </Button>
               </div>
@@ -68,13 +91,10 @@ export default function OptimizePreview({ results, onPurchase }: OptimizePreview
 
       {showPayment && (
         <PaymentModal
-          amount={price}
-          wordCount={results.wordCount}
+          results={results}
           onClose={() => setShowPayment(false)}
-          onPaymentComplete={() => {
-            setShowPayment(false);
-            onPurchase();
-          }}
+          onPaymentComplete={handlePaymentComplete}
+          isGuest={isGuest}
         />
       )}
     </>

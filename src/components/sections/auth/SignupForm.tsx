@@ -3,13 +3,13 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
+import { useAuth } from '@/lib/auth/auth-context';
 
 export default function SignupForm() {
-  const router = useRouter();
+  const { login } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -41,8 +41,6 @@ export default function SignupForm() {
     setIsLoading(true);
 
     try {
-      console.log('Attempting signup...');
-      
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: {
@@ -52,18 +50,14 @@ export default function SignupForm() {
       });
 
       const data = await res.json();
-      console.log('Server response status:', res.status);
-      console.log('Server response data:', data);
 
       if (!res.ok) {
         throw new Error(data.error || 'Signup failed');
       }
 
-      // Successful signup
-      router.push('/dashboard');
-      router.refresh();
+      // Let AuthContext handle navigation after successful signup
+      await login(email);
     } catch (err) {
-      console.error('Detailed signup error:', err);
       setError(err instanceof Error ? err.message : 'An error occurred during signup');
     } finally {
       setIsLoading(false);

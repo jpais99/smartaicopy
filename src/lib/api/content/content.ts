@@ -27,6 +27,7 @@ export async function optimizeContent(
         metaDescription: '',
         keywords: [],
       },
+      wordCount: 0,  // Added this line to match OptimizeResponse type
       error: error instanceof Error ? error.message : 'Failed to optimize content'
     };
   }

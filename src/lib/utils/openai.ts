@@ -1,3 +1,5 @@
+// src/lib/utils/openai.ts
+
 import OpenAI from 'openai';
 
 // Initialize OpenAI client

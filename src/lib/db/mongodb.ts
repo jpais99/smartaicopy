@@ -1,4 +1,5 @@
 // src/lib/db/mongodb.ts
+
 import { MongoClient } from 'mongodb';
 
 if (!process.env.MONGODB_URI) {
@@ -27,6 +28,11 @@ if (process.env.NODE_ENV === 'development') {
   // In production mode, it's best to not use a global variable.
   client = new MongoClient(uri, options);
   clientPromise = client.connect();
+}
+
+export async function getMongoDb() {
+  const client = await clientPromise;
+  return client.db('smartaicopy');
 }
 
 // Export a module-scoped MongoClient promise. By doing this in a

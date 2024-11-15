@@ -43,7 +43,14 @@ export async function POST(request: NextRequest) {
 
     // Process content
     try {
-      const result = await optimizeContent(body.content);
+      const optimizeResult = await optimizeContent(body.content);
+      
+      // Combine original content with optimization results
+      const result = {
+        ...optimizeResult,
+        originalContent: body.content // Add original content here
+      };
+      
       return NextResponse.json(result);
     } catch (e) {
       const error = e as Error;

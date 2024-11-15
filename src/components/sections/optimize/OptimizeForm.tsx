@@ -11,11 +11,11 @@ interface OptimizeFormProps {
     wordCount: number;
     price: number;
   }) => Promise<void>;
+  isLoading?: boolean; // Add this prop
 }
 
-export default function OptimizeForm({ onSubmit }: OptimizeFormProps) {
+export default function OptimizeForm({ onSubmit, isLoading = false }: OptimizeFormProps) {
   const [content, setContent] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [truncated, setTruncated] = useState(false);
 
@@ -39,7 +39,6 @@ export default function OptimizeForm({ onSubmit }: OptimizeFormProps) {
     e.preventDefault();
     if (!isValid) return;
     
-    setIsLoading(true);
     setError('');
 
     try {
@@ -54,8 +53,6 @@ export default function OptimizeForm({ onSubmit }: OptimizeFormProps) {
       }
     } catch (err) {
       setError('An error occurred. Please try again.');
-    } finally {
-      setIsLoading(false);
     }
   };
 
