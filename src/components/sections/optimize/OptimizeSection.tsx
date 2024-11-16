@@ -106,28 +106,11 @@ export default function OptimizeSection() {
     }
   };
 
-  const handlePurchaseComplete = async () => {
-    if (!results) return;
-
-    try {
-      const response = await fetch('/api/optimize/save', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(results),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save optimization');
-      }
-
-      setIsPaid(true);
-      setShowPayment(false);
+  const handlePurchaseComplete = () => {
+    setIsPaid(true);
+    setShowPayment(false);
+    if (results) {
       saveOptimizationState(results, 'completed', true);
-    } catch (error) {
-      console.error('Save failed:', error);
-      setError('Failed to save optimization. Please try again.');
     }
   };
 

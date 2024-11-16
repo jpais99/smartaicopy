@@ -14,26 +14,33 @@ interface MongoOptimizationResult {
 
 export async function saveOptimizationResult(result: Omit<MongoOptimizationResult, '_id'>) {
   try {
+    console.log('saveOptimizationResult called with:', result);
+    
     const db = await getMongoDb();
     const collection = db.collection('optimizations');
     
-    const newResult = {
-      ...result,
-      metadata: {
-        ...result.metadata,
-        timestamp: new Date().toISOString(),
-      }
-    };
+    // Ensure we have all required fields
+    if (!result.userId || !result.originalContent || !result.optimizedContent) {
+      console.error('Missing required fields:', {
+        hasUserId: !!result.userId,
+        hasOriginalContent: !!result.originalContent,
+        hasOptimizedContent: !!result.optimizedContent
+      });
+      throw new Error('Missing required fields for optimization');
+    }
 
-    const response = await collection.insertOne(newResult);
+    const response = await collection.insertOne(result);
+    
+    console.log('MongoDB insert response:', response);
+    
     if (!response.acknowledged) {
       throw new Error('Database operation failed');
     }
     
     return { success: true, id: response.insertedId };
   } catch (error) {
-    console.error('Error saving optimization result:', error);
-    throw new Error('Failed to save optimization result');
+    console.error('Error in saveOptimizationResult:', error);
+    throw error;
   }
 }
 
@@ -44,6 +51,16 @@ export async function getUserOptimizations(userId: ObjectId, page = 1, limit = 1
     
     const skip = (page - 1) * limit;
     
+    console.log('Querying optimizations with userId:', userId.toString());
+    
+    // First, let's check what we're working with
+    const allDocs = await collection.find({ userId }).toArray();
+    console.log('All documents before sorting:', allDocs.map(doc => ({
+      id: doc._id.toString(),
+      timestamp: doc.metadata.timestamp,
+      date: new Date(doc.metadata.timestamp)
+    })));
+    
     const results = await collection.find({ 
       userId,
       'payment.status': 'completed'
@@ -52,11 +69,19 @@ export async function getUserOptimizations(userId: ObjectId, page = 1, limit = 1
       .skip(skip)
       .limit(limit)
       .toArray();
-      
+    
+    console.log('Results after sorting:', results.map(doc => ({
+      id: doc._id.toString(),
+      timestamp: doc.metadata.timestamp,
+      date: new Date(doc.metadata.timestamp)
+    })));
+    
     const total = await collection.countDocuments({ 
       userId,
       'payment.status': 'completed'
     });
+    
+    console.log('Total documents found:', total);
     
     return {
       results: results.map(r => ({

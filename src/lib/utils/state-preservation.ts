@@ -6,7 +6,7 @@ interface StoredOptimization {
  status: 'preview' | 'completed';
  timestamp: number;
  isPaid: boolean;
- paymentPending: boolean;  // Added flag
+ paymentPending: boolean;
 }
 
 // 30-minute expiration for temporary stored results
@@ -27,6 +27,18 @@ export function saveOptimizationState(
   };
   
   console.log('[Storage] Saving state:', state);
+  
+  // If the status is 'completed' and isPaid is true, save to database
+  if (status === 'completed' && isPaid) {
+    fetch('/api/optimize/save', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(results),
+    }).catch(error => console.error('Failed to save optimization:', error));
+  }
+  
   localStorage.setItem('pendingOptimization', JSON.stringify(state));
 }
 

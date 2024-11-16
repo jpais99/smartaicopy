@@ -8,9 +8,13 @@ import { getServerSession } from '@/lib/auth/auth-helpers';
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession();
+    console.log('Session:', session);
+    
     const optimizeResponse: OptimizeResponse = await request.json();
+    console.log('Received optimization data:', optimizeResponse);
     
     if (!optimizeResponse || !optimizeResponse.optimizedContent) {
+      console.error('Invalid optimization data received');
       return NextResponse.json(
         { error: 'Invalid optimization data' },
         { status: 400 }
@@ -19,10 +23,10 @@ export async function POST(request: NextRequest) {
 
     // Only save to MongoDB for authenticated users
     if (!session?.user) {
-      // For guests, just return success without saving to DB
+      console.log('No authenticated user found');
       return NextResponse.json({ 
         success: true, 
-        temporary: true // Flag to indicate this wasn't permanently saved
+        temporary: true
       });
     }
 
@@ -45,7 +49,10 @@ export async function POST(request: NextRequest) {
       }
     };
 
+    console.log('Preparing to save optimization:', optimizationResult);
+
     const result = await saveOptimizationResult(optimizationResult);
+    console.log('Save result:', result);
 
     return NextResponse.json(result);
   } catch (error) {

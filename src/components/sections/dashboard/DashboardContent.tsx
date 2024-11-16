@@ -10,104 +10,124 @@ import PaymentModal from '@/components/sections/optimize/PaymentModal';
 import { OptimizeResponse } from '@/lib/api/content/types';
 import { useAuth } from '@/lib/auth/auth-context';
 import { saveOptimizationState, clearOptimizationState } from '@/lib/utils/state-preservation';
+import Button from '@/components/common/Button';
 
 export default function DashboardContent() {
- const { isLoggedIn } = useAuth();
- const [results, setResults] = useState<OptimizeResponse | null>(null);
- const [isPaid, setIsPaid] = useState(false);
- const [showPayment, setShowPayment] = useState(false);
- const [isLoading, setIsLoading] = useState(false);
+  const { isLoggedIn } = useAuth();
+  const [results, setResults] = useState<OptimizeResponse | null>(null);
+  const [isPaid, setIsPaid] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showForm, setShowForm] = useState(true);
 
- const handleSubmit = async (data: {
-   content: string;
-   wordCount: number;
-   price: number;
- }) => {
-   setIsLoading(true);
-   try {
-     const response = await fetch('/api/optimize', {
-       method: 'POST',
-       headers: {
-         'Content-Type': 'application/json',
-       },
-       body: JSON.stringify(data),
-     });
+  const handleSubmit = async (data: {
+    content: string;
+    wordCount: number;
+    price: number;
+  }) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/optimize', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
 
-     const result = await response.json();
-     
-     if (!response.ok) {
-       throw new Error(result.error || 'Failed to optimize content');
-     }
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to optimize content');
+      }
 
-     setResults(result);
-     // Save initial results with preview status
-     saveOptimizationState(result, 'preview', false);
-   } catch (error) {
-     console.error('Optimization failed:', error);
-     // Handle error display to user here
-   } finally {
-     setIsLoading(false);
-   }
- };
+      setResults(result);
+      setShowForm(false);
+      saveOptimizationState(result, 'preview', false);
+    } catch (error) {
+      console.error('Optimization failed:', error);
+      // Handle error display to user here
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
- const handlePurchaseAttempt = () => {
-   // No need for auth check in dashboard as user is already authenticated
-   setShowPayment(true);
- };
+  const handlePurchaseAttempt = () => {
+    // No need for auth check in dashboard as user is already authenticated
+    setShowPayment(true);
+  };
 
- const handlePurchaseComplete = () => {
-   setIsPaid(true);
-   setShowPayment(false);
-   if (results) {
-     // Save as completed and paid
-     saveOptimizationState(results, 'completed', true);
-   }
- };
+  const handlePurchaseComplete = async () => {
+    setIsPaid(true);
+    setShowPayment(false);
+    if (results) {
+      // Save as completed and paid
+      saveOptimizationState(results, 'completed', true);
+    }
+  };
 
- const handleReset = () => {
-   setResults(null);
-   setIsPaid(false);
-   setShowPayment(false);
-   clearOptimizationState();
- };
+  const handleReset = () => {
+    setResults(null);
+    setIsPaid(false);
+    setShowPayment(false);
+    setShowForm(true);
+    clearOptimizationState();
+  };
 
- return (
-   <div className="max-w-3xl mx-auto space-y-8">
-     {/* Optimization Form or Results Section */}
-     <div className="bg-background/50 rounded-lg p-6">
-       <h2 className="text-xl font-medium mb-6">Optimize New Content</h2>
-       {results ? (
-         isPaid ? (
-           <OptimizeResults results={results} onReset={handleReset} />
-         ) : (
-           <>
-             <OptimizePreview 
-               results={results} 
-               onPurchase={handlePurchaseAttempt}
-               isGuest={false}
-             />
-             {showPayment && (
-               <PaymentModal
-                 results={results}
-                 onClose={() => setShowPayment(false)}
-                 onPaymentComplete={handlePurchaseComplete}
-                 isGuest={false}
-               />
-             )}
-           </>
-         )
-       ) : (
-         <OptimizeForm onSubmit={handleSubmit} isLoading={isLoading} />
-       )}
-     </div>
+  return (
+    <div className="max-w-3xl mx-auto space-y-8">
+      {/* Optimization Form or Results Section */}
+      <div className="bg-background/50 rounded-lg p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-medium">
+            {showForm ? 'Optimize New Content' : 'Optimization Results'}
+          </h2>
+          {!showForm && (
+            <Button
+              onClick={handleReset}
+              variant="outline"
+              size="sm"
+              className="!w-auto"
+            >
+              New Optimization
+            </Button>
+          )}
+        </div>
 
-     {/* History Section */}
-     {isLoggedIn && (
-       <div className="bg-background/50 rounded-lg p-6">
-         <h2 className="text-xl font-medium mb-6">Recent Optimizations</h2>
-         <OptimizationHistory />
-       </div>
-     )}
-   </div>
- );
+        {showForm ? (
+          <OptimizeForm onSubmit={handleSubmit} isLoading={isLoading} />
+        ) : (
+          results && (
+            isPaid ? (
+              <OptimizeResults results={results} onReset={handleReset} />
+            ) : (
+              <>
+                <OptimizePreview 
+                  results={results} 
+                  onPurchase={handlePurchaseAttempt}
+                  isGuest={false}
+                />
+                {showPayment && (
+                  <PaymentModal
+                    results={results}
+                    onClose={() => setShowPayment(false)}
+                    onPaymentComplete={handlePurchaseComplete}
+                    isGuest={false}
+                  />
+                )}
+              </>
+            )
+          )
+        )}
+      </div>
+
+      {/* History Section */}
+      {isLoggedIn && (
+        <div className="bg-background/50 rounded-lg p-6">
+          <h2 className="text-xl font-medium mb-6">Recent Optimizations</h2>
+          <OptimizationHistory />
+        </div>
+      )}
+    </div>
+  );
 }
