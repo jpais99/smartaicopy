@@ -1,4 +1,5 @@
 // src/lib/utils/state-preservation.ts
+
 import { OptimizeResponse } from '@/lib/api/content/types';
 
 interface StoredOptimization {

@@ -1,4 +1,5 @@
 // src/types/api.ts
+
 // Type definitions specific to API requests and responses
 
 // API Request types

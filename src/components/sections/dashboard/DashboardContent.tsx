@@ -1,7 +1,8 @@
 // src/components/sections/dashboard/DashboardContent.tsx
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import OptimizeForm from '@/components/sections/optimize/OptimizeForm';
 import OptimizeResults from '@/components/sections/optimize/OptimizeResults';
 import OptimizePreview from '@/components/sections/optimize/OptimizePreview';
@@ -19,6 +20,7 @@ export default function DashboardContent() {
   const [showPayment, setShowPayment] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showForm, setShowForm] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const handleSubmit = async (data: {
     content: string;
@@ -53,7 +55,6 @@ export default function DashboardContent() {
   };
 
   const handlePurchaseAttempt = () => {
-    // No need for auth check in dashboard as user is already authenticated
     setShowPayment(true);
   };
 
@@ -61,8 +62,9 @@ export default function DashboardContent() {
     setIsPaid(true);
     setShowPayment(false);
     if (results) {
-      // Save as completed and paid
       saveOptimizationState(results, 'completed', true);
+      // Trigger history refresh
+      setRefreshKey(prev => prev + 1);
     }
   };
 
@@ -78,21 +80,11 @@ export default function DashboardContent() {
     <div className="max-w-3xl mx-auto space-y-8">
       {/* Optimization Form or Results Section */}
       <div className="bg-background/50 rounded-lg p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-medium">
-            {showForm ? 'Optimize New Content' : 'Optimization Results'}
-          </h2>
-          {!showForm && (
-            <Button
-              onClick={handleReset}
-              variant="outline"
-              size="sm"
-              className="!w-auto"
-            >
-              New Optimization
-            </Button>
-          )}
-        </div>
+      <div className="mb-6">
+  <h2 className="text-xl font-medium">
+    {showForm ? 'Optimize New Content' : 'Optimization Results'}
+  </h2>
+</div>
 
         {showForm ? (
           <OptimizeForm onSubmit={handleSubmit} isLoading={isLoading} />
@@ -125,7 +117,7 @@ export default function DashboardContent() {
       {isLoggedIn && (
         <div className="bg-background/50 rounded-lg p-6">
           <h2 className="text-xl font-medium mb-6">Recent Optimizations</h2>
-          <OptimizationHistory />
+          <OptimizationHistory key={refreshKey} />
         </div>
       )}
     </div>

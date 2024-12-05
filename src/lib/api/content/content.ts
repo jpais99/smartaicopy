@@ -1,4 +1,5 @@
 // src/lib/api/content/content.ts
+
 import { OptimizeRequest, OptimizeResponse } from './types';
 import { fetchWithError } from '../../utils/api-helpers';
 
@@ -21,6 +22,7 @@ export async function optimizeContent(
     });
   } catch (error) {
     return {
+      originalContent: content,
       optimizedContent: '',
       suggestions: {
         title: [],

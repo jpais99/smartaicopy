@@ -1,12 +1,27 @@
 // src/components/layout/Header.tsx
+
 'use client';
 
 import Link from 'next/link';
+import { useRouter, usePathname } from 'next/navigation';
 import Button from '@/components/common/Button';
 import { useAuth } from '@/lib/auth/auth-context';
+import { clearOptimizationState } from '@/lib/utils/state-preservation';
 
 export default function Header() {
   const { isLoggedIn, logout } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const handleOptimizeClick = () => {
+    clearOptimizationState();
+    // If we're already on the optimize page, force a refresh
+    if (pathname === '/optimize') {
+      window.location.href = '/optimize';
+    } else {
+      router.push('/optimize');
+    }
+  };
 
   return (
     <header 
@@ -51,11 +66,13 @@ export default function Header() {
                     Login
                   </Button>
                 </Link>
-                <Link href="/optimize">
-                  <Button variant="primary" size="sm">
-                    Optimize Content
-                  </Button>
-                </Link>
+                <Button 
+                  variant="primary" 
+                  size="sm"
+                  onClick={handleOptimizeClick}
+                >
+                  Optimize Content
+                </Button>
               </>
             )}
           </nav>

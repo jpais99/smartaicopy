@@ -2,19 +2,24 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { loadStripe } from '@stripe/stripe-js';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth/auth-context';
-import OptimizeForm from '@/components/sections/optimize/OptimizeForm';
-import OptimizeResults from '@/components/sections/optimize/OptimizeResults';
-import OptimizePreview from '@/components/sections/optimize/OptimizePreview';
+import OptimizeForm from './OptimizeForm';
+import OptimizeResults from './OptimizeResults';
+import OptimizePreview from './OptimizePreview';
 import AuthChoiceModal from '@/components/sections/auth/AuthChoiceModal';
-import PaymentModal from '@/components/sections/optimize/PaymentModal';
+import PaymentModal from './PaymentModal';
 import { OptimizeResponse } from '@/lib/api/content/types';
 import { 
   getOptimizationState, 
   saveOptimizationState, 
   clearOptimizationState 
 } from '@/lib/utils/state-preservation';
+
+// Initialize Stripe promise once, outside of component
+// This ensures we only create one Stripe instance that can be shared
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 export default function OptimizeSection() {
   const { isLoggedIn } = useAuth();
@@ -27,42 +32,52 @@ export default function OptimizeSection() {
   const [error, setError] = useState<string | null>(null);
   const searchParams = useSearchParams();
 
+  // Handle customer returns and state restoration
   useEffect(() => {
+    const fromPayment = searchParams.get('from') === 'payment';
     const hasRestore = searchParams.get('restore') === 'true';
-    const hasShowPayment = searchParams.get('showPayment') === 'true';
     const fromAuth = searchParams.get('fromAuth') === 'true';
-    
-    console.log('OptimizeSection - URL params:', {
-      hasRestore,
-      hasShowPayment,
-      fromAuth,
-      fullURL: window.location.href
-    });
 
-    // Immediately handle auth redirect cases
-    if (fromAuth && hasRestore && hasShowPayment) {
-      const saved = getOptimizationState();
-      console.log('OptimizeSection - Auth redirect with saved state:', saved);
-      
-      if (saved) {
-        setResults(saved.results);
-        setIsPaid(saved.isPaid);
-        setShowPayment(true); // Immediately show payment modal
+    const checkPaymentStatus = async () => {
+      try {
+        const clientSecret = searchParams.get('payment_intent_client_secret');
+        const paymentIntentId = searchParams.get('payment_intent');
+
+        if (clientSecret && paymentIntentId) {
+          const stripe = await stripePromise;
+          if (!stripe) return;
+
+          const { paymentIntent } = await stripe.retrievePaymentIntent(clientSecret);
+
+          if (paymentIntent?.status === 'succeeded') {
+            const saved = getOptimizationState();
+            if (saved?.results) {
+              setResults(saved.results);
+              setIsPaid(true);
+              saveOptimizationState(saved.results, 'completed', true);
+              return;
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error checking payment status:', err);
       }
-      return;
-    }
+    };
 
-    // Handle normal restore cases
-    if (hasRestore) {
+    if (fromPayment && hasRestore) {
+      checkPaymentStatus();
+    } else if (fromAuth && hasRestore) {
       const saved = getOptimizationState();
-      console.log('OptimizeSection - Retrieved saved state:', saved);
-      
       if (saved) {
-        console.log('OptimizeSection - Restoring optimization state');
         setResults(saved.results);
         setIsPaid(saved.isPaid);
-      } else {
-        console.log('OptimizeSection - No saved state found');
+        setShowPayment(true);
+      }
+    } else if (hasRestore) {
+      const saved = getOptimizationState();
+      if (saved) {
+        setResults(saved.results);
+        setIsPaid(saved.isPaid);
       }
     }
   }, [searchParams]);

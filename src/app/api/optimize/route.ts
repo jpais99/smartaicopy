@@ -1,4 +1,5 @@
 // src/app/api/optimize/route.ts
+
 import { NextRequest, NextResponse } from 'next/server';
 import { optimizeContent } from '@/lib/utils/openai';
 import { OptimizeRequest } from '@/lib/api/content/types';

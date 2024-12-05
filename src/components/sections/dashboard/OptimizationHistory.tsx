@@ -1,4 +1,5 @@
 // src/components/sections/dashboard/OptimizationHistory.tsx
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -8,7 +9,11 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { OptimizationResult } from '@/lib/api/content/types';
 import OptimizationDetails from './OptimizationDetails';
 
-export default function OptimizationHistory() {
+interface OptimizationHistoryProps {
+  onHistoryLoad?: () => void;
+}
+
+export default function OptimizationHistory({ onHistoryLoad }: OptimizationHistoryProps) {
   const { isLoggedIn } = useAuth();
   const [history, setHistory] = useState<OptimizationResult[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -17,36 +22,46 @@ export default function OptimizationHistory() {
   const [error, setError] = useState<string | null>(null);
   const [selectedOptimization, setSelectedOptimization] = useState<OptimizationResult | null>(null);
 
+  const fetchHistory = async () => {
+    try {
+      console.log('Fetching history for page:', currentPage);
+      setLoading(true);
+      setError(null);
+      const response = await fetch(`/api/optimize/history?page=${currentPage}&limit=5`);
+      console.log('Response status:', response.status);
+      if (!response.ok) {
+        throw new Error('Failed to fetch optimization history');
+      }
+      const data = await response.json();
+      console.log('Received data:', data);
+      setHistory(data.results);
+      setTotalPages(data.pagination.pages);
+      if (onHistoryLoad) {
+        onHistoryLoad();
+      }
+    } catch (err) {
+      console.error('History fetch error:', err);
+      setError('Failed to load optimization history');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!isLoggedIn) {
       console.log('User not logged in, skipping fetch');
       return;
     }
 
-    async function fetchHistory() {
-      try {
-        console.log('Fetching history for page:', currentPage);
-        setLoading(true);
-        setError(null);
-        const response = await fetch(`/api/optimize/history?page=${currentPage}&limit=5`);
-        console.log('Response status:', response.status);
-        if (!response.ok) {
-          throw new Error('Failed to fetch optimization history');
-        }
-        const data = await response.json();
-        console.log('Received data:', data);
-        setHistory(data.results);
-        setTotalPages(data.pagination.pages);
-      } catch (err) {
-        console.error('History fetch error:', err);
-        setError('Failed to load optimization history');
-      } finally {
-        setLoading(false);
-      }
-    }
-
     fetchHistory();
   }, [isLoggedIn, currentPage]);
+
+  // Add refresh method
+  const refreshHistory = () => {
+    if (isLoggedIn) {
+      fetchHistory();
+    }
+  };
 
   if (!isLoggedIn) return null;
 

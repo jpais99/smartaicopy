@@ -1,4 +1,5 @@
 // src/components/sections/home/Hero.tsx
+
 export default function Hero() {
   return (
     <section 

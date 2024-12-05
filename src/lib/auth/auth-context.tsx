@@ -1,4 +1,5 @@
 // src/lib/auth/auth-context.tsx
+
 'use client';
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
@@ -8,8 +9,9 @@ import { getOptimizationState, clearOptimizationState, getReturnPath, clearRetur
 interface AuthContextType {
   isLoggedIn: boolean;
   userEmail: string | null;
+  isTestAccount: boolean;
   pendingOptimization: boolean;
-  login: (email: string) => Promise<void>;
+  login: (email: string, isTestAccount?: boolean) => Promise<void>;
   logout: () => Promise<void>;
   setPendingOptimization: (value: boolean) => void;
 }
@@ -20,6 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isTestAccount, setIsTestAccount] = useState(false);
   const [pendingOptimization, setPendingOptimization] = useState(false);
 
   useEffect(() => {
@@ -30,6 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (data.authenticated) {
           setIsLoggedIn(true);
           setUserEmail(data.email);
+          setIsTestAccount(data.isTestAccount || false);
         }
       } catch (error) {
         console.error('Auth check failed:', error);
@@ -39,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkAuth();
   }, []);
 
-  const login = async (email: string) => {
+  const login = async (email: string, isTestAccount: boolean = false) => {
     console.log('[Auth] Login started');
     
     const storedState = getOptimizationState();
@@ -52,6 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Set auth state
       setIsLoggedIn(true);
       setUserEmail(email);
+      setIsTestAccount(isTestAccount);
       
       // Use stored return path or construct default, ensuring fromAuth is included
       let redirectPath = returnPath || '/optimize?restore=true&showPayment=true';
@@ -69,6 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('[Auth] No stored state, navigating to dashboard');
       setIsLoggedIn(true);
       setUserEmail(email);
+      setIsTestAccount(isTestAccount);
       await router.replace('/dashboard');
     }
   };
@@ -78,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await fetch('/api/auth/logout', { method: 'POST' });
       setIsLoggedIn(false);
       setUserEmail(null);
+      setIsTestAccount(false);
       setPendingOptimization(false);
       clearOptimizationState();
       clearReturnPath();
@@ -91,7 +98,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider 
       value={{ 
         isLoggedIn, 
-        userEmail, 
+        userEmail,
+        isTestAccount, 
         pendingOptimization,
         setPendingOptimization, 
         login, 

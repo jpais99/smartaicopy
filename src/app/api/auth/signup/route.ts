@@ -1,4 +1,5 @@
 // src/app/api/auth/signup/route.ts
+
 import { createUser } from '@/lib/db/users';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
@@ -14,7 +15,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { email, password } = body;
+    const { email, password, isTestAccount = false } = body;
 
     if (!email || !password) {
       return NextResponse.json(
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = await createUser(email, password);
+    const result = await createUser(email, password, isTestAccount);
 
     if (!result.success) {
       return NextResponse.json(
@@ -48,7 +49,10 @@ export async function POST(request: Request) {
       maxAge: 60 * 60 * 24 * 7 // 1 week
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ 
+      success: true,
+      isTestAccount 
+    });
   } catch (error) {
     console.error('Signup route error:', error);
     return NextResponse.json(

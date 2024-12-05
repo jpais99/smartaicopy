@@ -1,4 +1,5 @@
 // src/components/sections/auth/LoginForm.tsx
+
 'use client';
 
 import { useState, useEffect } from 'react';

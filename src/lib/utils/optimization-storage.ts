@@ -1,4 +1,5 @@
 // src/lib/utils/optimization-storage.ts
+
 import { OptimizeResponse } from '@/lib/api/content/types';
 
 interface StoredOptimization {

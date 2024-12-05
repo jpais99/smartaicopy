@@ -1,4 +1,5 @@
 // src/lib/db/users.ts
+
 import { MongoClient, ObjectId } from 'mongodb';
 import clientPromise from './mongodb';
 import bcrypt from 'bcrypt';
@@ -9,6 +10,7 @@ export interface User {
   passwordHash: string;
   createdAt: Date;
   updatedAt: Date;
+  isTestAccount?: boolean;
 }
 
 export interface AuthError {
@@ -18,7 +20,11 @@ export interface AuthError {
 
 let client: MongoClient;
 
-export async function createUser(email: string, password: string): Promise<{ success: boolean; error?: AuthError }> {
+export async function createUser(
+  email: string, 
+  password: string,
+  isTestAccount: boolean = false
+): Promise<{ success: boolean; error?: AuthError }> {
   try {
     client = await clientPromise;
     const db = client.db('smartaicopy');
@@ -46,7 +52,8 @@ export async function createUser(email: string, password: string): Promise<{ suc
       email,
       passwordHash,
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
+      isTestAccount
     });
 
     return { success: true };

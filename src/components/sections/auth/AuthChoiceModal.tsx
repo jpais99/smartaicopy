@@ -1,4 +1,5 @@
 // src/components/sections/auth/AuthChoiceModal.tsx
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -81,7 +82,6 @@ export default function AuthChoiceModal({
              <ul className="space-y-2 text-sm text-secondary">
                <li>• Save optimization history</li>
                <li>• Access results anytime</li>
-               <li>• Save payment information</li>
                <li>• Track content improvements</li>
              </ul>
            </div>

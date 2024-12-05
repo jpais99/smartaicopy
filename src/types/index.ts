@@ -1,4 +1,5 @@
 // src/types/index.ts
+
 // Core type definitions used throughout the application
 
 // User related types

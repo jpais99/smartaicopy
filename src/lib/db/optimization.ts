@@ -1,17 +1,28 @@
 // src/lib/db/optimization.ts
+
 import { ObjectId } from 'mongodb';
 import { getMongoDb } from './mongodb';
 import { OptimizationResult, OptimizationMetadata, PaymentStatus } from '@/lib/api/content/types';
 
+// Extended payment status to include Stripe-specific fields
+interface StripePaymentStatus extends PaymentStatus {
+  stripePaymentIntentId?: string;  // Stripe's payment intent ID
+  stripeCustomerId?: string;       // Customer ID for saved payment methods
+  amount?: number;                 // Amount in cents
+  currency?: string;               // Three-letter currency code (e.g., 'usd')
+}
+
+// Our complete optimization record structure
 interface MongoOptimizationResult {
   _id?: ObjectId;
   userId: ObjectId;
   originalContent: string;
   optimizedContent: string;
   metadata: OptimizationMetadata;
-  payment: PaymentStatus;
+  payment: StripePaymentStatus;
 }
 
+// Save a new optimization result to MongoDB
 export async function saveOptimizationResult(result: Omit<MongoOptimizationResult, '_id'>) {
   try {
     console.log('saveOptimizationResult called with:', result);
@@ -19,7 +30,7 @@ export async function saveOptimizationResult(result: Omit<MongoOptimizationResul
     const db = await getMongoDb();
     const collection = db.collection('optimizations');
     
-    // Ensure we have all required fields
+    // Validate required fields before saving
     if (!result.userId || !result.originalContent || !result.optimizedContent) {
       console.error('Missing required fields:', {
         hasUserId: !!result.userId,
@@ -29,6 +40,7 @@ export async function saveOptimizationResult(result: Omit<MongoOptimizationResul
       throw new Error('Missing required fields for optimization');
     }
 
+    // Insert the record with payment information
     const response = await collection.insertOne(result);
     
     console.log('MongoDB insert response:', response);
@@ -44,6 +56,7 @@ export async function saveOptimizationResult(result: Omit<MongoOptimizationResul
   }
 }
 
+// Get optimizations for a specific user with pagination
 export async function getUserOptimizations(userId: ObjectId, page = 1, limit = 10) {
   try {
     const db = await getMongoDb();
@@ -53,7 +66,7 @@ export async function getUserOptimizations(userId: ObjectId, page = 1, limit = 1
     
     console.log('Querying optimizations with userId:', userId.toString());
     
-    // First, let's check what we're working with
+    // Log all documents to help with debugging
     const allDocs = await collection.find({ userId }).toArray();
     console.log('All documents before sorting:', allDocs.map(doc => ({
       id: doc._id.toString(),
@@ -61,6 +74,7 @@ export async function getUserOptimizations(userId: ObjectId, page = 1, limit = 1
       date: new Date(doc.metadata.timestamp)
     })));
     
+    // Only return completed and paid optimizations
     const results = await collection.find({ 
       userId,
       'payment.status': 'completed'
@@ -76,6 +90,7 @@ export async function getUserOptimizations(userId: ObjectId, page = 1, limit = 1
       date: new Date(doc.metadata.timestamp)
     })));
     
+    // Count total documents for pagination
     const total = await collection.countDocuments({ 
       userId,
       'payment.status': 'completed'
@@ -83,6 +98,7 @@ export async function getUserOptimizations(userId: ObjectId, page = 1, limit = 1
     
     console.log('Total documents found:', total);
     
+    // Convert ObjectIds to strings for JSON serialization
     return {
       results: results.map(r => ({
         ...r,
@@ -102,6 +118,7 @@ export async function getUserOptimizations(userId: ObjectId, page = 1, limit = 1
   }
 }
 
+// Get a single optimization by ID
 export async function getOptimizationById(id: string, userId: ObjectId) {
   try {
     const db = await getMongoDb();
@@ -117,6 +134,7 @@ export async function getOptimizationById(id: string, userId: ObjectId) {
       throw new Error('Optimization not found');
     }
     
+    // Convert ObjectIds to strings
     return {
       ...result,
       _id: result._id.toString(),
@@ -128,6 +146,7 @@ export async function getOptimizationById(id: string, userId: ObjectId) {
   }
 }
 
+// Handle guest user optimization migration
 export async function migrateGuestOptimizations(guestUserId: ObjectId, newUserId: ObjectId) {
   try {
     const db = await getMongoDb();

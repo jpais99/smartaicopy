@@ -1,11 +1,12 @@
 // src/components/sections/dashboard/OptimizationDetails.tsx
+
 'use client';
 
 import { useState } from 'react';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
+import CopyButton from '@/components/common/CopyButton';
 import { OptimizationResult } from '@/lib/api/content/types';
-import { Copy, Check } from 'lucide-react';
 
 interface OptimizationDetailsProps {
   optimization: OptimizationResult;
@@ -17,17 +18,6 @@ export default function OptimizationDetails({
   onClose 
 }: OptimizationDetailsProps) {
   const [activeTab, setActiveTab] = useState<'optimized' | 'original'>('optimized');
-  const [copiedField, setCopiedField] = useState<string | null>(null);
-
-  const copyToClipboard = async (text: string, fieldName: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedField(fieldName);
-      setTimeout(() => setCopiedField(null), 2000);
-    } catch (err) {
-      console.error('Failed to copy text:', err);
-    }
-  };
 
   return (
     <Card className="relative">
@@ -76,23 +66,11 @@ export default function OptimizationDetails({
       <div className="p-4 space-y-6">
         {/* Content Display */}
         <div className="relative">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => copyToClipboard(
-              activeTab === 'optimized' ? optimization.optimizedContent : optimization.originalContent,
-              `${activeTab}-content`
-            )}
-            className="absolute right-4 top-4 !w-auto"
-            aria-label={`Copy ${activeTab} content`}
-          >
-            {copiedField === `${activeTab}-content` ? (
-              <Check className="h-4 w-4" />
-            ) : (
-              <Copy className="h-4 w-4" />
-            )}
-          </Button>
-          <div className="prose max-w-none p-4 bg-background/50 rounded-lg">
+          <CopyButton
+            text={activeTab === 'optimized' ? optimization.optimizedContent : optimization.originalContent}
+            className="absolute right-2 top-4"
+          />
+          <div className="prose max-w-none p-4 pr-14 bg-background/50 rounded-lg">
             {(activeTab === 'optimized' ? optimization.optimizedContent : optimization.originalContent)
               .split(/\n+/)
               .map((paragraph, index) => (
@@ -112,21 +90,14 @@ export default function OptimizationDetails({
                 <h4 className="text-sm font-medium mb-2">Title Suggestions</h4>
                 <div className="space-y-2">
                   {optimization.metadata.titles.map((title, index) => (
-                    <div key={index} className="flex justify-between items-center p-2 bg-background/50 rounded-lg">
-                      <span className="text-sm">{title}</span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => copyToClipboard(title, `title-${index}`)}
-                        className="!w-auto"
-                        aria-label={`Copy title suggestion ${index + 1}`}
-                      >
-                        {copiedField === `title-${index}` ? (
-                          <Check className="h-4 w-4" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
+                    <div key={index} className="relative">
+                      <CopyButton
+                        text={title}
+                        className="absolute right-2 top-2"
+                      />
+                      <div className="p-2 pr-14 bg-background/50 rounded-lg text-sm">
+                        {title}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -137,15 +108,23 @@ export default function OptimizationDetails({
             {optimization.metadata.keywords && optimization.metadata.keywords.length > 0 && (
               <div>
                 <h4 className="text-sm font-medium mb-2">Keywords</h4>
-                <div className="flex flex-wrap gap-2">
-                  {optimization.metadata.keywords.map((keyword, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                    >
-                      {keyword}
-                    </span>
-                  ))}
+                <div className="relative">
+                  <CopyButton 
+                    text={optimization.metadata.keywords.join(', ')} 
+                    className="absolute right-2 top-2"
+                  />
+                  <div className="p-2 pr-14 bg-background/50 rounded-lg">
+                    <div className="flex flex-wrap gap-2">
+                      {optimization.metadata.keywords.map((keyword, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                        >
+                          {keyword}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -155,22 +134,13 @@ export default function OptimizationDetails({
               <div>
                 <h4 className="text-sm font-medium mb-2">Meta Description</h4>
                 <div className="relative">
-                  <div className="p-2 bg-background/50 rounded-lg text-sm">
+                  <CopyButton
+                    text={optimization.metadata.metaDescription}
+                    className="absolute right-2 top-2"
+                  />
+                  <div className="p-2 pr-14 bg-background/50 rounded-lg text-sm">
                     {optimization.metadata.metaDescription}
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => copyToClipboard(optimization.metadata.metaDescription!, 'meta')}
-                    className="absolute right-2 top-2 !w-auto"
-                    aria-label="Copy meta description"
-                  >
-                    {copiedField === 'meta' ? (
-                      <Check className="h-4 w-4" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
-                  </Button>
                 </div>
               </div>
             )}

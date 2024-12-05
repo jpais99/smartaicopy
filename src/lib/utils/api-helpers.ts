@@ -1,4 +1,5 @@
 // src/lib/utils/api-helpers.ts
+
 export async function fetchWithError<T>(
   endpoint: string,
   options: RequestInit = {}
