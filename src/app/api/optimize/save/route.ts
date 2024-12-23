@@ -5,44 +5,53 @@ import { ObjectId } from 'mongodb';
 import { OptimizeResponse } from '@/lib/api/content/types';
 import { saveOptimizationResult } from '@/lib/db/optimization';
 import { getServerSession } from '@/lib/auth/auth-helpers';
+import { logError, createApiError, ApiError } from '@/lib/utils/error-logger';
 
 export async function POST(request: NextRequest) {
   try {
-    // Get authenticated user session
+    // Log start of save operation
+    logError('Optimization save started', 'info', {
+      timestamp: new Date().toISOString(),
+      path: '/api/optimize/save'
+    });
+
+    // Verify user session first
     const session = await getServerSession();
-    console.log('Save optimization - Session:', session);
-    
-    // Parse optimization response from request body
+    logError('Session check completed', 'info', {
+      hasSession: !!session,
+      hasUser: !!session?.user
+    });
+
     const optimizeResponse: OptimizeResponse = await request.json();
-    console.log('Received optimization data:', optimizeResponse);
+    logError('Received optimization data', 'info', {
+      hasContent: !!optimizeResponse?.optimizedContent,
+      wordCount: optimizeResponse?.wordCount
+    });
     
-    // Validate required data
     if (!optimizeResponse || !optimizeResponse.optimizedContent) {
-      console.error('Invalid optimization data received');
-      return NextResponse.json(
-        { error: 'Invalid optimization data' },
-        { status: 400 }
-      );
+      throw createApiError('Invalid optimization data', 400, {
+        hasResponse: !!optimizeResponse,
+        hasContent: !!optimizeResponse?.optimizedContent
+      });
     }
 
-    // For guest users, we return success but don't save to database
-    // This maintains compatibility with the client-side flow
+    // For guest users, we just return success without saving
     if (!session?.user) {
-      console.log('No authenticated user found - returning temporary success');
+      logError('Guest user optimization - skipping save', 'info');
       return NextResponse.json({ 
         success: true, 
         temporary: true
       });
     }
 
-    // Construct the optimization record with payment information
+    // Prepare the optimization record for authenticated users
     const optimizationResult = {
       userId: new ObjectId(session.user.id),
       originalContent: optimizeResponse.originalContent,
       optimizedContent: optimizeResponse.optimizedContent,
       metadata: {
         wordCount: optimizeResponse.wordCount,
-        price: optimizeResponse.wordCount <= 1500 ? 25 : 50,
+        price: optimizeResponse.wordCount <= 1500 ? 10 : 15,
         timestamp: new Date(),
         status: 'completed' as const,
         titles: optimizeResponse.suggestions.title,
@@ -51,27 +60,54 @@ export async function POST(request: NextRequest) {
       },
       payment: {
         status: 'completed' as const,
-        completedAt: new Date(),
-        // We'll add Stripe-specific fields here:
-        stripePaymentIntentId: optimizeResponse.paymentIntent?.id,
-        stripeCustomerId: optimizeResponse.customer?.id,
-        amount: optimizeResponse.paymentIntent?.amount,
-        currency: optimizeResponse.paymentIntent?.currency
+        completedAt: new Date()
       }
     };
 
-    console.log('Preparing to save optimization:', optimizationResult);
+    logError('Preparing to save optimization', 'info', {
+      userId: session.user.id,
+      wordCount: optimizationResult.metadata.wordCount,
+      timestamp: optimizationResult.metadata.timestamp
+    });
 
-    // Save to database using existing optimization storage
-    const result = await saveOptimizationResult(optimizationResult);
-    console.log('Save result:', result);
+    try {
+      const result = await saveOptimizationResult(optimizationResult);
+      
+      // Log successful save
+      logError('Optimization saved successfully', 'info', {
+        userId: session.user.id,
+        optimizationId: result.id?.toString(),
+        wordCount: optimizationResult.metadata.wordCount
+      });
 
-    return NextResponse.json(result);
-  } catch (error) {
-    console.error('Save optimization error:', error);
+      return NextResponse.json(result);
+    } catch (dbError: unknown) {
+      // Handle database-specific errors
+      throw createApiError(
+        'Failed to save optimization',
+        500,
+        { 
+          context: 'Database operation',
+          userId: session.user.id,
+          error: dbError instanceof Error ? dbError.message : 'Unknown database error'
+        }
+      );
+    }
+  } catch (e: unknown) {
+    const error = e instanceof ApiError ? e : createApiError(
+      e instanceof Error ? e.message : 'Failed to save optimization',
+      500,
+      { context: 'Save optimization route handler' }
+    );
+
+    logError(error, 'error', {
+      context: 'Optimization save',
+      path: '/api/optimize/save'
+    });
+
     return NextResponse.json(
-      { error: 'Failed to save optimization' },
-      { status: 500 }
+      { error: error.message },
+      { status: error.statusCode }
     );
   }
 }

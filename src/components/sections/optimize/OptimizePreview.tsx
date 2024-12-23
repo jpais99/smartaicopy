@@ -29,7 +29,7 @@ export default function OptimizePreview({
   };
 
   const previewContent = getPreviewContent(results.optimizedContent);
-  const price = results.wordCount <= 1500 ? 25 : 50;
+  const price = results.wordCount <= 1500 ? 10 : 15;
 
   return (
     <div className="space-y-6">

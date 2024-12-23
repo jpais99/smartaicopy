@@ -12,7 +12,7 @@ interface OptimizeFormProps {
     wordCount: number;
     price: number;
   }) => Promise<void>;
-  isLoading?: boolean; // Add this prop
+  isLoading?: boolean;
 }
 
 export default function OptimizeForm({ onSubmit, isLoading = false }: OptimizeFormProps) {
@@ -116,8 +116,16 @@ export default function OptimizeForm({ onSubmit, isLoading = false }: OptimizeFo
   };
 
   const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
-  const price = wordCount <= 1500 ? 25 : 50;
+  const price = wordCount <= 1500 ? 10 : 15;
   const isValid = content.trim().length > 0;
+
+  // Helper function to format price display
+  const getPriceDisplay = () => {
+    if (!content.trim()) {
+      return '-';
+    }
+    return `$${price}`;
+  };
 
   return (
     <Card variant="primary">
@@ -162,7 +170,7 @@ export default function OptimizeForm({ onSubmit, isLoading = false }: OptimizeFo
                 {wordCount} words {wordCount === 3000 && "(maximum)"}
               </span>
               <span className="text-secondary">
-                Price: ${price}
+                Price: {getPriceDisplay()}
               </span>
             </div>
             {truncated && (

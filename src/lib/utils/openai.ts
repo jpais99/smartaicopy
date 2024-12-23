@@ -52,7 +52,7 @@ Requirements:
    - Optimize readability and scannability
 
 3. Titles and Meta:
-   - Create three unique, SEO-optimized titles
+   - Create three unique, SEO-optimized titles that match the original content's tone and voice
    - Write a compelling meta description (150-160 characters)
    - Select highly relevant keywords for the content
 

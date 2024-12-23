@@ -100,7 +100,7 @@ export default function PaymentModal({
     .filter(sentence => sentence.trim())[0]
     .trim() + '...';
 
-  const price = results.wordCount <= 1500 ? 25 : 50;
+  const price = results.wordCount <= 1500 ? 10 : 15;
 
   useEffect(() => {
     const initializePayment = async () => {

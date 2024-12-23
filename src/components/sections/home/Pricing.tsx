@@ -30,7 +30,7 @@ export default function Pricing() {
                <h3 className="text-2xl font-bold text-foreground">Standard</h3>
                <p className="mt-2 text-secondary">For shorter content</p>
                <div className="mt-4">
-                 <span className="text-4xl font-bold text-foreground">$25</span>
+                 <span className="text-4xl font-bold text-foreground">$10</span>
                  <span className="text-secondary">/piece</span>
                </div>
                <ul className="mt-6 space-y-4">
@@ -66,7 +66,7 @@ export default function Pricing() {
                <h3 className="text-2xl font-bold text-foreground">Extended</h3>
                <p className="mt-2 text-secondary">For longer content</p>
                <div className="mt-4">
-                 <span className="text-4xl font-bold text-foreground">$50</span>
+                 <span className="text-4xl font-bold text-foreground">$15</span>
                  <span className="text-secondary">/piece</span>
                </div>
                <ul className="mt-6 space-y-4">
