@@ -1,7 +1,7 @@
 // src/app/api/payment/webhook/route.ts
 
 import { NextResponse } from 'next/server';
-import { stripe } from '../../../../../../smartaicopy-backup/stripe/server-config';
+import { stripe } from '@/lib/stripe/server-config';
 import { getMongoDb } from '@/lib/db/mongodb';
 import { ObjectId } from 'mongodb';
 import { headers } from 'next/headers';

@@ -1,7 +1,7 @@
 // src/app/api/payment/intent/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
-import { stripe } from '../../../../../../smartaicopy-backup/stripe/server-config';
+import { stripe } from '@/lib/stripe/server-config';
 import { logError, createApiError, ApiError } from '@/lib/utils/error-logger';
 
 export async function POST(request: NextRequest) {
