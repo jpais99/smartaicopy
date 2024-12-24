@@ -1,54 +1,38 @@
 // src/lib/db/mongodb.ts
 
 import { MongoClient } from 'mongodb';
-import { envConfig } from '../config/env';
-import { logError } from '../utils/error-logger';
 
-const uri = envConfig.mongodb.uri;
+if (!process.env.MONGODB_URI) {
+  throw new Error('Missing MONGODB_URI environment variable');
+}
+
+const uri = process.env.MONGODB_URI;
 const options = {};
 
 let client: MongoClient;
 let clientPromise: Promise<MongoClient>;
 
-if (envConfig.nodeEnv === 'development') {
+if (process.env.NODE_ENV === 'development') {
+  // In development, use a global variable so that the value
+  // is preserved across module reloads caused by HMR
   const globalWithMongo = global as typeof globalThis & {
     _mongoClientPromise?: Promise<MongoClient>
   };
 
   if (!globalWithMongo._mongoClientPromise) {
-    try {
-      client = new MongoClient(uri, options);
-      globalWithMongo._mongoClientPromise = client.connect();
-    } catch (error) {
-      logError('MongoDB connection failed in development', 'error', {
-        error,
-        uri: uri.replace(/:[^:/@]+@/, ':***@') // Hide password in logs
-      });
-      throw error;
-    }
+    client = new MongoClient(uri, options);
+    globalWithMongo._mongoClientPromise = client.connect();
   }
   clientPromise = globalWithMongo._mongoClientPromise;
 } else {
-  try {
-    client = new MongoClient(uri, options);
-    clientPromise = client.connect();
-  } catch (error) {
-    logError('MongoDB connection failed in production', 'error', {
-      error,
-      uri: uri.replace(/:[^:/@]+@/, ':***@') // Hide password in logs
-    });
-    throw error;
-  }
+  // In production, it's best to not use a global variable
+  client = new MongoClient(uri, options);
+  clientPromise = client.connect();
 }
 
 export async function getMongoDb() {
-  try {
-    const client = await clientPromise;
-    return client.db(envConfig.mongodb.dbName);
-  } catch (error) {
-    logError('Failed to get MongoDB database', 'error', { error });
-    throw error;
-  }
+  const client = await clientPromise;
+  return client.db('smartaicopy');
 }
 
 export default clientPromise;

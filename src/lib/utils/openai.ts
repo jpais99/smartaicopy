@@ -1,11 +1,10 @@
 // src/lib/utils/openai.ts
 
 import OpenAI from 'openai';
-import { envConfig } from '../config/env';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
-  apiKey: envConfig.openai.apiKey,
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 interface OptimizeContentResponse {

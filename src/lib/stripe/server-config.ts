@@ -1,10 +1,13 @@
 // src/lib/stripe/server-config.ts
 
 import Stripe from 'stripe';
-import { envConfig } from '../config/env';
+
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error('Missing Stripe secret key');
+}
 
 // Server-side only Stripe instance
-export const stripe = new Stripe(envConfig.stripe.secretKey, {
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2024-12-18.acacia',
   typescript: true,
 });
