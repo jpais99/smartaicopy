@@ -1,40 +1,54 @@
+// src/lib/db/mongodb.ts
+
 import { MongoClient } from 'mongodb';
+import { envConfig } from '../config/env';
+import { logError } from '../utils/error-logger';
+
+const uri = envConfig.mongodb.uri;
+const options = {};
 
 let client: MongoClient;
 let clientPromise: Promise<MongoClient>;
 
-const getMongoClient = () => {
-  if (!process.env.MONGODB_URI) {
-    console.error('MongoDB URI check failed:', {
-      hasUri: !!process.env.MONGODB_URI,
-      nodeEnv: process.env.NODE_ENV,
-    });
-    throw new Error('Missing required MONGODB_URI environment variable');
-  }
+if (envConfig.nodeEnv === 'development') {
+  const globalWithMongo = global as typeof globalThis & {
+    _mongoClientPromise?: Promise<MongoClient>
+  };
 
-  if (process.env.NODE_ENV === 'development') {
-    // In development, use a global variable
-    let globalWithMongo = global as typeof globalThis & {
-      _mongoClientPromise?: Promise<MongoClient>
-    };
-
-    if (!globalWithMongo._mongoClientPromise) {
-      client = new MongoClient(process.env.MONGODB_URI);
+  if (!globalWithMongo._mongoClientPromise) {
+    try {
+      client = new MongoClient(uri, options);
       globalWithMongo._mongoClientPromise = client.connect();
+    } catch (error) {
+      logError('MongoDB connection failed in development', 'error', {
+        error,
+        uri: uri.replace(/:[^:/@]+@/, ':***@') // Hide password in logs
+      });
+      throw error;
     }
-    clientPromise = globalWithMongo._mongoClientPromise;
-  } else {
-    // In production, create new connection
-    client = new MongoClient(process.env.MONGODB_URI);
-    clientPromise = client.connect();
   }
-
-  return clientPromise;
-};
-
-export async function getMongoDb() {
-  const client = await getMongoClient();
-  return client.db('smartaicopy');
+  clientPromise = globalWithMongo._mongoClientPromise;
+} else {
+  try {
+    client = new MongoClient(uri, options);
+    clientPromise = client.connect();
+  } catch (error) {
+    logError('MongoDB connection failed in production', 'error', {
+      error,
+      uri: uri.replace(/:[^:/@]+@/, ':***@') // Hide password in logs
+    });
+    throw error;
+  }
 }
 
-export default getMongoClient;
+export async function getMongoDb() {
+  try {
+    const client = await clientPromise;
+    return client.db(envConfig.mongodb.dbName);
+  } catch (error) {
+    logError('Failed to get MongoDB database', 'error', { error });
+    throw error;
+  }
+}
+
+export default clientPromise;

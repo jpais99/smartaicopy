@@ -5,14 +5,18 @@ import { stripe } from '@/lib/stripe/server-config';
 import { getMongoDb } from '@/lib/db/mongodb';
 import { ObjectId } from 'mongodb';
 import { headers } from 'next/headers';
+import { envConfig } from '@/lib/config/env';
+import { logError } from '@/lib/utils/error-logger';
 
 export async function POST(request: Request) {
   const body = await request.text();
   const headersList = await headers();
   const signature = headersList.get('stripe-signature');
 
-  if (!process.env.STRIPE_WEBHOOK_SECRET) {
-    console.error('Missing Stripe webhook secret');
+  if (!envConfig.stripe.webhookSecret) {
+    logError('Missing Stripe webhook secret', 'error', {
+      context: 'webhook handler'
+    });
     return NextResponse.json(
       { error: 'Webhook secret missing' },
       { status: 500 }
@@ -23,7 +27,7 @@ export async function POST(request: Request) {
     const event = stripe.webhooks.constructEvent(
       body,
       signature ?? '',  // Changed to nullish coalescing
-      process.env.STRIPE_WEBHOOK_SECRET
+      envConfig.stripe.webhookSecret
     );
 
     // Handle different event types

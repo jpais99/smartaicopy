@@ -1,14 +1,14 @@
 // src/lib/stripe/config.ts
 
 import { loadStripe } from '@stripe/stripe-js';
-import { StripeConfig } from '@/lib/stripe/types';
+import { envConfig } from '../config/env';
+import { StripeConfig } from './types';
 
 // Client-side configuration
 export const getStripeConfig = (): StripeConfig => {
   return {
-    publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '',
-    testMode: process.env.NODE_ENV !== 'production' || 
-              process.env.NEXT_PUBLIC_PAYMENT_TEST_MODE === 'true'
+    publishableKey: envConfig.stripe.publishableKey,
+    testMode: envConfig.nodeEnv !== 'production'
   };
 };
 
