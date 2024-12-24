@@ -3,6 +3,11 @@
 import { MongoClient } from 'mongodb';
 
 if (!process.env.MONGODB_URI) {
+  console.error('MongoDB URI check failed:', {
+    hasUri: !!process.env.MONGODB_URI,
+    nodeEnv: process.env.NODE_ENV,
+    // Do not log the actual URI for security
+  });
   throw new Error('Missing required MONGODB_URI environment variable');
 }
 
