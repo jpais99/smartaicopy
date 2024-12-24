@@ -9,7 +9,7 @@ import {
   useElements,
   Elements,
 } from '@stripe/react-stripe-js';
-import { getStripePromise } from '../../../../smartaicopy-backup/stripe/config';  // Updated import
+import { getStripePromise } from '@/lib/stripe/config';  // Updated import
 import Button from '@/components/common/Button';
 
 interface CardElementProps {
