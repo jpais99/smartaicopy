@@ -13,7 +13,7 @@ if (!uri && process.env.NODE_ENV === 'production') {
 let client: MongoClient | undefined;
 let clientPromise: Promise<MongoClient> | undefined;
 
-// Global type declaration for development
+// Extend global for development hot-reloading
 declare global {
   var _mongoClientPromise: Promise<MongoClient> | undefined;
 }
