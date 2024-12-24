@@ -1,45 +1,40 @@
-// src/lib/db/mongodb.ts
-
 import { MongoClient } from 'mongodb';
-
-if (!process.env.MONGODB_URI) {
-  console.error('MongoDB URI check failed:', {
-    hasUri: !!process.env.MONGODB_URI,
-    nodeEnv: process.env.NODE_ENV,
-    // Do not log the actual URI for security
-  });
-  throw new Error('Missing required MONGODB_URI environment variable');
-}
-
-const uri = process.env.MONGODB_URI;
-const options = {};
 
 let client: MongoClient;
 let clientPromise: Promise<MongoClient>;
 
-if (process.env.NODE_ENV === 'development') {
-  // In development mode, use a global variable so that the value
-  // is preserved across module reloads caused by HMR (Hot Module Replacement).
-  let globalWithMongo = global as typeof globalThis & {
-    _mongoClientPromise?: Promise<MongoClient>
-  };
-
-  if (!globalWithMongo._mongoClientPromise) {
-    client = new MongoClient(uri, options);
-    globalWithMongo._mongoClientPromise = client.connect();
+const getMongoClient = () => {
+  if (!process.env.MONGODB_URI) {
+    console.error('MongoDB URI check failed:', {
+      hasUri: !!process.env.MONGODB_URI,
+      nodeEnv: process.env.NODE_ENV,
+    });
+    throw new Error('Missing required MONGODB_URI environment variable');
   }
-  clientPromise = globalWithMongo._mongoClientPromise;
-} else {
-  // In production mode, it's best to not use a global variable.
-  client = new MongoClient(uri, options);
-  clientPromise = client.connect();
-}
+
+  if (process.env.NODE_ENV === 'development') {
+    // In development, use a global variable
+    let globalWithMongo = global as typeof globalThis & {
+      _mongoClientPromise?: Promise<MongoClient>
+    };
+
+    if (!globalWithMongo._mongoClientPromise) {
+      client = new MongoClient(process.env.MONGODB_URI);
+      globalWithMongo._mongoClientPromise = client.connect();
+    }
+    clientPromise = globalWithMongo._mongoClientPromise;
+  } else {
+    // In production, create new connection
+    client = new MongoClient(process.env.MONGODB_URI);
+    clientPromise = client.connect();
+  }
+
+  return clientPromise;
+};
 
 export async function getMongoDb() {
-  const client = await clientPromise;
+  const client = await getMongoClient();
   return client.db('smartaicopy');
 }
 
-// Export a module-scoped MongoClient promise. By doing this in a
-// separate module, the client can be shared across functions.
-export default clientPromise;
+export default getMongoClient;
