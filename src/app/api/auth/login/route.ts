@@ -3,10 +3,17 @@
 import { verifyUser } from '@/lib/db/users';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { getMongoDb } from '@/lib/db/mongodb';
+import { logError } from '@/lib/utils/error-logger';
 
 export async function POST(request: Request) {
   try {
+    if (!process.env.MONGODB_URI) {
+      return NextResponse.json(
+        { error: 'Database configuration error' },
+        { status: 503 }
+      );
+    }
+
     const body = await request.json();
     const { email, password } = body;
 
@@ -26,10 +33,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Get user details for test account status
-    const db = await getMongoDb();
-    const user = await db.collection('users').findOne({ email });
-
     const cookieStore = await cookies();
     cookieStore.set('auth_session', email, {
       httpOnly: true,
@@ -39,12 +42,13 @@ export async function POST(request: Request) {
       maxAge: 60 * 60 * 24 * 7 // 1 week
     });
 
-    return NextResponse.json({ 
-      success: true,
-      isTestAccount: user?.isTestAccount || false
-    });
-  } catch (error) {
-    console.error('Login error:', error);
+    logError('Login successful', 'info', { email });
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    const error = err instanceof Error ? err : 'Login failed';
+    logError(error, 'error', { context: 'Login' });
+    
     return NextResponse.json(
       { error: 'An error occurred during login' },
       { status: 500 }

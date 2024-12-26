@@ -3,9 +3,17 @@
 import { createUser } from '@/lib/db/users';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { logError } from '@/lib/utils/error-logger';
 
 export async function POST(request: Request) {
   try {
+    if (!process.env.MONGODB_URI) {
+      return NextResponse.json(
+        { error: 'Database configuration error' },
+        { status: 503 }
+      );
+    }
+
     const body = await request.json();
     
     if (!body || typeof body !== 'object') {
@@ -15,7 +23,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { email, password, isTestAccount = false } = body;
+    const { email, password } = body;
 
     if (!email || !password) {
       return NextResponse.json(
@@ -49,12 +57,13 @@ export async function POST(request: Request) {
       maxAge: 60 * 60 * 24 * 7 // 1 week
     });
 
-    return NextResponse.json({ 
-      success: true,
-      isTestAccount 
-    });
-  } catch (error) {
-    console.error('Signup route error:', error);
+    logError('Signup successful', 'info', { email });
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    const error = err instanceof Error ? err : 'Signup failed';
+    logError(error, 'error', { context: 'Signup' });
+    
     return NextResponse.json(
       { error: 'An unexpected error occurred' },
       { status: 500 }

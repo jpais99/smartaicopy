@@ -6,14 +6,13 @@ interface ErrorDetails {
   message: string;
   code?: string;
   stack?: string;
-  context?: Record<string, any>;
+  context: Record<string, unknown>;
 }
 
-// Add this custom error class
 export class ApiError extends Error {
   statusCode: number;
 
-  constructor(message: string, statusCode: number = 500) {
+  constructor(message: string, statusCode = 500) {
     super(message);
     this.statusCode = statusCode;
     this.name = 'ApiError';
@@ -23,7 +22,7 @@ export class ApiError extends Error {
 export function logError(
   error: Error | string,
   severity: ErrorSeverity = 'error',
-  context: Record<string, any> = {}
+  context: Record<string, unknown> = {}
 ): void {
   const errorDetails: ErrorDetails = {
     message: error instanceof Error ? error.message : error,
@@ -35,32 +34,25 @@ export function logError(
     }
   };
 
-  // In production, we'll send to error monitoring service
-  // For now, structured console logging
   if (process.env.NODE_ENV === 'production') {
-    // Production-only logging
-    console.error(JSON.stringify(errorDetails, null, 2));
+    console.error(JSON.stringify(errorDetails));
   } else {
-    // Development logging with better formatting
-    console.error('\n🚨 Error logged:');
-    console.error('Message:', errorDetails.message);
-    console.error('Context:', errorDetails.context);
+    console.error('\n🚨 Error:', errorDetails.message);
     if (errorDetails.stack) {
       console.error('Stack:', errorDetails.stack);
     }
+    console.error('Context:', errorDetails.context);
     console.error('\n');
   }
 }
 
-// Update the createApiError function to use our custom error class
 export function createApiError(
   message: string,
-  statusCode: number = 500,
-  context: Record<string, any> = {}
+  statusCode = 500,
+  context: Record<string, unknown> = {}
 ): ApiError {
   const error = new ApiError(message, statusCode);
   
-  // Log the API error
   logError(error, 'error', {
     statusCode,
     ...context

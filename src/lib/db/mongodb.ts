@@ -2,11 +2,14 @@
 
 import { MongoClient } from 'mongodb';
 
-if (!process.env.MONGODB_URI) {
-  throw new Error('Please add your MongoDB URI to .env.local');
+const MONGODB_URI = process.env.MONGODB_URI;
+
+if (!MONGODB_URI && process.env.NODE_ENV === 'production') {
+  console.error(
+    'Please define the MONGODB_URI environment variable inside Vercel'
+  );
 }
 
-const uri = process.env.MONGODB_URI;
 const options = {};
 
 let client: MongoClient;
@@ -19,15 +22,20 @@ declare global {
 
 if (process.env.NODE_ENV === 'development') {
   // In development mode, use a global variable so that the value
-  // is preserved across module reloads caused by HMR (Hot Module Replacement).
-  if (!global._mongoClientPromise) {
-    client = new MongoClient(uri, options);
+  // is preserved across module reloads caused by HMR
+  if (!global._mongoClientPromise && MONGODB_URI) {
+    client = new MongoClient(MONGODB_URI, options);
     global._mongoClientPromise = client.connect();
   }
   clientPromise = global._mongoClientPromise;
 } else {
-  // In production mode, it's best to not use a global variable.
-  client = new MongoClient(uri, options);
+  // In production mode, it's best to not use a global variable
+  if (!MONGODB_URI) {
+    throw new Error(
+      'Please define the MONGODB_URI environment variable inside Vercel'
+    );
+  }
+  client = new MongoClient(MONGODB_URI, options);
   clientPromise = client.connect();
 }
 

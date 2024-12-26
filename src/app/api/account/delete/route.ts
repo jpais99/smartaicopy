@@ -19,28 +19,33 @@ export async function DELETE() {
       );
     }
 
-    const db = await getMongoDb();
+    if (!process.env.MONGODB_URI) {
+      return NextResponse.json(
+        { error: 'Database configuration error' },
+        { status: 503 }
+      );
+    }
 
-    // Delete user's optimizations first
-    await db.collection('optimizations').deleteMany({
+    const db = await getMongoDb();
+    
+    const optimizationsResult = await db.collection('optimizations').deleteMany({
       userId: new ObjectId(session.user.id)
     });
 
-    // Delete user account
-    const result = await db.collection('users').deleteOne({
+    const userResult = await db.collection('users').deleteOne({
       _id: new ObjectId(session.user.id)
     });
 
-    if (!result.deletedCount) {
+    if (!userResult.deletedCount) {
       throw new Error('User not found');
     }
 
-    // Clear auth session - fix for Promise<ReadonlyRequestCookies>
     const cookieStore = await cookies();
     cookieStore.delete('auth_session');
 
-    logError('Account deletion completed successfully', 'info', {
-      userId: session.user.id
+    logError('Account deletion completed', 'info', {
+      userId: session.user.id,
+      optimizationsDeleted: optimizationsResult.deletedCount
     });
 
     return NextResponse.json({ success: true });

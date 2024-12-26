@@ -4,84 +4,52 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ObjectId } from 'mongodb';
 import { getUserOptimizations } from '@/lib/db/optimization';
 import { getServerSession } from '@/lib/auth/auth-helpers';
-import { logError, createApiError, ApiError } from '@/lib/utils/error-logger';
+import { logError } from '@/lib/utils/error-logger';
 
 export async function GET(request: NextRequest) {
   try {
-    // Log the start of history retrieval
-    logError('History retrieval started', 'info', {
-      path: '/api/optimize/history',
-      timestamp: new Date().toISOString()
-    });
-
     const session = await getServerSession();
-    
-    // Log session status
-    logError('Session check completed', 'info', {
-      hasSession: !!session,
-      hasUser: !!session?.user
-    });
-    
     if (!session?.user) {
-      throw createApiError('Unauthorized', 401, {
-        reason: 'No valid session found'
-      });
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    if (!process.env.MONGODB_URI) {
+      return NextResponse.json(
+        { error: 'Database configuration error' },
+        { status: 503 }
+      );
     }
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     
-    // Log pagination parameters
-    logError('Fetching optimizations', 'info', {
-      userId: session.user.id,
+    const results = await getUserOptimizations(
+      new ObjectId(session.user.id),
       page,
       limit
-    });
-
-    try {
-      const results = await getUserOptimizations(
-        new ObjectId(session.user.id),
-        page,
-        limit
-      );
-
-      // Log successful retrieval
-      logError('History retrieved successfully', 'info', {
-        userId: session.user.id,
-        resultCount: results.results.length,
-        totalPages: results.pagination.pages
-      });
-
-      return NextResponse.json(results);
-    } catch (dbError: unknown) {
-      // Handle database-specific errors
-      throw createApiError(
-        'Failed to fetch optimization history',
-        500,
-        { 
-          context: 'Database operation',
-          userId: session.user.id,
-          page,
-          limit
-        }
-      );
-    }
-  } catch (e: unknown) {
-    const error = e instanceof ApiError ? e : createApiError(
-      e instanceof Error ? e.message : 'History fetch failed',
-      500,
-      { context: 'History route handler' }
     );
 
-    logError(error, 'error', {
-      context: 'History retrieval',
-      path: '/api/optimize/history'
+    logError('History fetch completed', 'info', {
+      userId: session.user.id,
+      page,
+      limit,
+      resultCount: results.results.length
     });
 
+    return NextResponse.json(results);
+  } catch (err) {
+    logError(err instanceof Error ? err : 'Failed to fetch history', 'error', { 
+      context: 'History fetch',
+      path: '/api/optimize/history'
+    });
+    
     return NextResponse.json(
-      { error: error.message },
-      { status: error.statusCode }
+      { error: 'Failed to fetch optimization history' },
+      { status: 500 }
     );
   }
 }
