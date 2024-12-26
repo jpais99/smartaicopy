@@ -2,16 +2,6 @@
 
 import { MongoClient } from 'mongodb';
 
-const MONGODB_URI = process.env.MONGODB_URI;
-
-if (!MONGODB_URI && process.env.NODE_ENV === 'production') {
-  console.error(
-    'Please define the MONGODB_URI environment variable inside Vercel'
-  );
-}
-
-const options = {};
-
 let client: MongoClient;
 let clientPromise: Promise<MongoClient>;
 
@@ -23,25 +13,27 @@ declare global {
 if (process.env.NODE_ENV === 'development') {
   // In development mode, use a global variable so that the value
   // is preserved across module reloads caused by HMR
-  if (!global._mongoClientPromise && MONGODB_URI) {
-    client = new MongoClient(MONGODB_URI, options);
+  if (!global._mongoClientPromise && process.env.MONGODB_URI) {
+    client = new MongoClient(process.env.MONGODB_URI);
     global._mongoClientPromise = client.connect();
   }
   clientPromise = global._mongoClientPromise;
 } else {
   // In production mode, it's best to not use a global variable
-  if (!MONGODB_URI) {
-    throw new Error(
-      'Please define the MONGODB_URI environment variable inside Vercel'
-    );
+  if (!process.env.MONGODB_URI) {
+    clientPromise = Promise.resolve(null as unknown as MongoClient);
+  } else {
+    client = new MongoClient(process.env.MONGODB_URI);
+    clientPromise = client.connect();
   }
-  client = new MongoClient(MONGODB_URI, options);
-  clientPromise = client.connect();
 }
 
 export async function getMongoDb() {
   try {
     const client = await clientPromise;
+    if (!client) {
+      throw new Error('Database connection not available');
+    }
     return client.db('smartaicopy');
   } catch (error) {
     console.error('Failed to connect to MongoDB:', error);
@@ -49,5 +41,4 @@ export async function getMongoDb() {
   }
 }
 
-// Export clientPromise for reuse
 export default clientPromise;
