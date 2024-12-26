@@ -9,6 +9,13 @@ import { ObjectId } from 'mongodb';
 
 export async function PUT(request: NextRequest) {
   try {
+    if (!process.env.MONGODB_URI) {
+      return NextResponse.json(
+        { error: 'Database configuration error' },
+        { status: 503 }
+      );
+    }
+
     logError('Email update request started', 'info');
 
     const session = await getServerSession();
@@ -54,7 +61,6 @@ export async function PUT(request: NextRequest) {
       throw new Error('User not found');
     }
 
-    // Clear auth session - fixed cookies() promise
     const cookieStore = await cookies();
     cookieStore.delete('auth_session');
 
