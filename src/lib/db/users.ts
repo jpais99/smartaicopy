@@ -10,7 +10,6 @@ export interface User {
   passwordHash: string;
   createdAt: Date;
   updatedAt: Date;
-  isTestAccount?: boolean;
 }
 
 export interface AuthError {
@@ -20,14 +19,10 @@ export interface AuthError {
 
 let client: MongoClient;
 
-export async function createUser(
-  email: string, 
-  password: string,
-  isTestAccount: boolean = false
-): Promise<{ success: boolean; error?: AuthError }> {
+export async function createUser(email: string, password: string): Promise<{ success: boolean; error?: AuthError }> {
   try {
-    client = await clientPromise;
-    const db = client.db('smartaicopy');
+    const connectedClient = await clientPromise;
+    const db = connectedClient.db('smartaicopy');
     const users = db.collection<User>('users');
 
     // Check if user exists
@@ -52,8 +47,7 @@ export async function createUser(
       email,
       passwordHash,
       createdAt: now,
-      updatedAt: now,
-      isTestAccount
+      updatedAt: now
     });
 
     return { success: true };
@@ -71,8 +65,8 @@ export async function createUser(
 
 export async function verifyUser(email: string, password: string): Promise<{ success: boolean; error?: AuthError }> {
   try {
-    client = await clientPromise;
-    const db = client.db('smartaicopy');
+    const connectedClient = await clientPromise;
+    const db = connectedClient.db('smartaicopy');
     const users = db.collection<User>('users');
 
     const user = await users.findOne({ email });
