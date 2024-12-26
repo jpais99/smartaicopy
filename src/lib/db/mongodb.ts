@@ -13,10 +13,12 @@ if (!uri && process.env.NODE_ENV === 'production') {
 let client: MongoClient | undefined;
 let clientPromise: Promise<MongoClient> | undefined;
 
-// Extend global for development hot-reloading
+// Disable ESLint for the global declaration since we need var here
+/* eslint-disable no-var */
 declare global {
   var _mongoClientPromise: Promise<MongoClient> | undefined;
 }
+/* eslint-enable no-var */
 
 if (uri) {
   if (process.env.NODE_ENV === 'development') {
