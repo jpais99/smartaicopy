@@ -6,7 +6,7 @@ import OpenAI from 'openai';
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   maxRetries: 2,
-  timeout: 8000 // 8 seconds to allow for Vercel's 10s limit
+  timeout: 5000 // 8 seconds to allow for Vercel's 10s limit
 });
 
 interface OptimizeContentResponse {

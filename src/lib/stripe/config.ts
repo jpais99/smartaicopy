@@ -5,21 +5,23 @@ import { StripeConfig } from './types';
 
 // Client-side configuration
 export const getStripeConfig = (): StripeConfig => {
+  const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  if (!publishableKey) {
+    throw new Error('Missing Stripe publishable key');
+  }
   return {
-    publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
+    publishableKey,
     testMode: process.env.NODE_ENV !== 'production'
   };
 };
 
+let stripePromise: Promise<any> | null = null;
+
 // Initialize client-side Stripe instance
 export const getStripePromise = () => {
-  const config = getStripeConfig();
-  return loadStripe(config.publishableKey);
-};
-
-// Helper to determine if we should use demo payment flow
-export const useDemoPayment = (isTestAccount: boolean = false): boolean => {
-  return process.env.NODE_ENV === 'development' || 
-         process.env.NEXT_PUBLIC_PAYMENT_TEST_MODE === 'true' ||
-         isTestAccount;
+  if (!stripePromise) {
+    const config = getStripeConfig();
+    stripePromise = loadStripe(config.publishableKey);
+  }
+  return stripePromise;
 };
