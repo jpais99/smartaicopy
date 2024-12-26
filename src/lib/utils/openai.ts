@@ -5,6 +5,8 @@ import OpenAI from 'openai';
 // Initialize OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+  maxRetries: 2,
+  timeout: 8000 // 8 seconds to allow for Vercel's 10s limit
 });
 
 interface OptimizeContentResponse {
@@ -32,7 +34,7 @@ Return a JSON response with the following structure:
   "optimizedContent": "improved content here (never include a title)",
   "suggestions": {
     "title": ["title1", "title2", "title3"],
-    "metaDescription": "meta description here",
+    "metaDescription": "meta description here (max 155 chars)",
     "keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"]
   }
 }
@@ -68,7 +70,8 @@ Requirements:
         }
       ],
       temperature: 0.7,
-      response_format: { type: 'json_object' }
+      response_format: { type: 'json_object' },
+      max_tokens: 4000 // Limit token count for faster response
     });
 
     const result = JSON.parse(response.choices[0].message.content || '{}');
