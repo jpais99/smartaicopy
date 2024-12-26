@@ -1,5 +1,7 @@
 // src/app/optimize/page.tsx
+
 import { Metadata } from 'next';
+import { Suspense } from 'react';
 import OptimizeSection from '@/components/sections/optimize/OptimizeSection';
 
 export const metadata: Metadata = {
@@ -26,7 +28,9 @@ export default function OptimizePage() {
           </p>
         </div>
 
-        <OptimizeSection />
+        <Suspense fallback={<div>Loading...</div>}>
+          <OptimizeSection />
+        </Suspense>
       </div>
     </section>
   );
