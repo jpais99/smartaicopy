@@ -11,7 +11,7 @@ export const getStripeConfig = (): StripeConfig => {
   }
   return {
     publishableKey,
-    testMode: process.env.NODE_ENV !== 'production'
+    testMode: true  // Force test mode while using test keys
   };
 };
 
