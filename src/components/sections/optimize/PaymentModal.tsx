@@ -1,4 +1,5 @@
 // src/components/sections/optimize/PaymentModal.tsx
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -10,10 +11,8 @@ import { OptimizeResponse } from '@/lib/api/content/types';
 import { useAuth } from '@/lib/auth/auth-context';
 import { saveOptimizationState } from '@/lib/utils/state-preservation';
 
-// Use the global Stripe promise that's initialized in OptimizeSection
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
-// The payment form that handles the actual Stripe Elements integration
 function PaymentForm({ 
   onError, 
   price,
@@ -37,7 +36,6 @@ function PaymentForm({
     setIsProcessing(true);
 
     try {
-      // Save the optimization state before processing payment
       saveOptimizationState(results, 'preview', false);
 
       const { error: submitError } = await elements.submit();
@@ -64,12 +62,14 @@ function PaymentForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <PaymentElement />
+      <div className="max-h-[50vh] overflow-y-auto">
+        <PaymentElement />
+      </div>
       <Button
         type="submit"
         disabled={!stripe || isProcessing}
         isLoading={isProcessing}
-        className="w-full"
+        className="w-full focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
       >
         {isProcessing ? 'Processing...' : `Pay $${price}`}
       </Button>
@@ -77,7 +77,6 @@ function PaymentForm({
   );
 }
 
-// Main PaymentModal component - note the removal of stripeInstance from props
 interface PaymentModalProps {
   results: OptimizeResponse;
   onClose: () => void;
@@ -109,7 +108,7 @@ export default function PaymentModal({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            amount: price * 100, // Convert to cents for Stripe
+            amount: price * 100,
             isGuest
           }),
         });
@@ -141,7 +140,7 @@ export default function PaymentModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
       <Card variant="primary" className="w-full max-w-md">
         <div className="space-y-6 p-4">
           <div className="text-center">
@@ -184,7 +183,11 @@ export default function PaymentModal({
               />
             </Elements>
 
-            <Button onClick={onClose} variant="secondary" className="w-full">
+            <Button 
+              onClick={onClose} 
+              variant="secondary" 
+              className="w-full focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+            >
               Cancel
             </Button>
 
