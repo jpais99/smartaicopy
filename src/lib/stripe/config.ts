@@ -11,7 +11,7 @@ export const getStripeConfig = (): StripeConfig => {
   }
   return {
     publishableKey,
-    testMode: true  // Force test mode while using test keys
+    testMode: false  // Changed to false for production
   };
 };
 
