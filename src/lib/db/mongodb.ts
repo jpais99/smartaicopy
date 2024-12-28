@@ -10,14 +10,11 @@ declare global {
   var _mongoClientPromise: Promise<MongoClient>;
 }
 
-// Connection options with explicit TLS settings
+// Connection options with minimal TLS settings
 const options = {
   maxPoolSize: 1,
   minPoolSize: 1,
   tls: true,
-  tlsInsecure: false,
-  tlsAllowInvalidCertificates: false,
-  tlsAllowInvalidHostnames: false,
   serverSelectionTimeoutMS: 5000,
   directConnection: false
 };
