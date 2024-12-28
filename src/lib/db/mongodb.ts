@@ -10,13 +10,16 @@ declare global {
   var _mongoClientPromise: Promise<MongoClient>;
 }
 
-// Connection options to optimize performance
+// Connection options with explicit TLS settings
 const options = {
   maxPoolSize: 1,
   minPoolSize: 1,
+  tls: true,
+  tlsInsecure: false,
+  tlsAllowInvalidCertificates: false,
+  tlsAllowInvalidHostnames: false,
   serverSelectionTimeoutMS: 5000,
-  socketTimeoutMS: 5000,
-  connectTimeoutMS: 5000,
+  directConnection: false
 };
 
 if (process.env.NODE_ENV === 'development') {
