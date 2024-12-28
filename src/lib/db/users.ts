@@ -3,7 +3,6 @@
 import { MongoClient, ObjectId } from 'mongodb';
 import clientPromise from './mongodb';
 import bcrypt from 'bcrypt';
-import { logError } from '@/lib/utils/error-logger';
 
 export interface User {
   _id?: ObjectId;
@@ -18,26 +17,16 @@ export interface AuthError {
   code: 'INVALID_CREDENTIALS' | 'USER_EXISTS' | 'INVALID_INPUT' | 'SERVER_ERROR';
 }
 
-export async function createUser(email: string, password: string): Promise<{ success: boolean; error?: AuthError }> {
-  let db;
-  try {
-    // Get connection with timeout
-    const connectedClient = await Promise.race([
-      clientPromise,
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Database connection timeout')), 5000)
-      )
-    ]) as MongoClient;
+let client: MongoClient;
 
-    db = connectedClient.db('smartaicopy');
+export async function createUser(email: string, password: string): Promise<{ success: boolean; error?: AuthError }> {
+  try {
+    const connectedClient = await clientPromise;
+    const db = connectedClient.db('smartaicopy');
     const users = db.collection<User>('users');
 
-    // Run operations in parallel where possible
-    const [existingUser, passwordHash] = await Promise.all([
-      users.findOne({ email }),
-      bcrypt.hash(password, 12)  // Reduced from 12 to 10 rounds for speed
-    ]);
-
+    // Check if user exists
+    const existingUser = await users.findOne({ email });
     if (existingUser) {
       return {
         success: false,
@@ -48,6 +37,11 @@ export async function createUser(email: string, password: string): Promise<{ suc
       };
     }
 
+    // Hash password
+    const salt = await bcrypt.genSalt(12);
+    const passwordHash = await bcrypt.hash(password, salt);
+
+    // Create user
     const now = new Date();
     await users.insertOne({
       email,
@@ -56,15 +50,9 @@ export async function createUser(email: string, password: string): Promise<{ suc
       updatedAt: now
     });
 
-    logError('User created successfully', 'info', { email });
     return { success: true };
-
   } catch (err) {
-    const error = err instanceof Error ? err : new Error('Unknown error occurred');
-    logError(error, 'error', { 
-      context: 'User creation',
-      email 
-    });
+    console.error('Error creating user:', err);
     return {
       success: false,
       error: {
@@ -76,17 +64,9 @@ export async function createUser(email: string, password: string): Promise<{ suc
 }
 
 export async function verifyUser(email: string, password: string): Promise<{ success: boolean; error?: AuthError }> {
-  let db;
   try {
-    // Get connection with timeout
-    const connectedClient = await Promise.race([
-      clientPromise,
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Database connection timeout')), 5000)
-      )
-    ]) as MongoClient;
-
-    db = connectedClient.db('smartaicopy');
+    const connectedClient = await clientPromise;
+    const db = connectedClient.db('smartaicopy');
     const users = db.collection<User>('users');
 
     const user = await users.findOne({ email });
@@ -111,15 +91,9 @@ export async function verifyUser(email: string, password: string): Promise<{ suc
       };
     }
 
-    logError('User verified successfully', 'info', { email });
     return { success: true };
-
   } catch (err) {
-    const error = err instanceof Error ? err : new Error('Unknown error occurred');
-    logError(error, 'error', { 
-      context: 'User verification',
-      email 
-    });
+    console.error('Error verifying user:', err);
     return {
       success: false,
       error: {

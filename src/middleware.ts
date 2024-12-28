@@ -4,6 +4,11 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
+  // Skip middleware for API routes
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    return NextResponse.next();
+  }
+
   const authSession = request.cookies.get('auth_session');
 
   // Check for auth session on protected routes
@@ -25,5 +30,9 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/login', '/signup']
-};
+  matcher: [
+    '/dashboard/:path*',
+    '/login',
+    '/signup'
+  ]
+}
