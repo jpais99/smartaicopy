@@ -1,7 +1,6 @@
 // src/app/api/auth/forgot-password/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
-import { ObjectId } from 'mongodb';
 import { getMongoDb } from '@/lib/db/mongodb';
 import { logError } from '@/lib/utils/error-logger';
 import crypto from 'crypto';
