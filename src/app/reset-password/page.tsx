@@ -1,6 +1,7 @@
 // src/app/reset-password/page.tsx
 
 import { Metadata } from 'next';
+import { Suspense } from 'react';
 import ResetPasswordForm from '@/components/sections/auth/ResetPasswordForm';
 
 export const metadata: Metadata = {
@@ -28,7 +29,9 @@ export default function ResetPasswordPage() {
           </p>
         </div>
 
-        <ResetPasswordForm />
+        <Suspense fallback={<div>Loading...</div>}>
+          <ResetPasswordForm />
+        </Suspense>
       </div>
     </section>
   );
