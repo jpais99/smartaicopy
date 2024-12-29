@@ -9,13 +9,11 @@ export const metadata: Metadata = {
   robots: 'noindex, nofollow'
 };
 
-interface PageProps {
-  params: {
-    token: string;
-  };
-}
-
-export default function ResetPasswordPage({ params }: PageProps) {
+export default async function ResetPasswordPage({
+  params
+}: {
+  params: { token: string }
+}) {
   return (
     <section
       aria-labelledby="reset-password-heading"
