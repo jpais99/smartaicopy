@@ -3,17 +3,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 
-interface ResetPasswordFormProps {
-  token: string;
-}
-
-export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
+export default function ResetPasswordForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token');
+  
   const [mounted, setMounted] = useState(false);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -24,11 +23,19 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (!token) {
+      router.replace('/forgot-password');
+    }
+  }, [token, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!token) {
+      setError('Invalid reset token');
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError('Passwords do not match');
@@ -66,7 +73,7 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
     }
   };
 
-  if (!mounted) {
+  if (!mounted || !token) {
     return null;
   }
 

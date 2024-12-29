@@ -1,7 +1,6 @@
-// src/app/reset-password/[token]/page.tsx
+// src/app/reset-password/page.tsx
 
 import { Metadata } from 'next';
-import { NextPage } from 'next';
 import ResetPasswordForm from '@/components/sections/auth/ResetPasswordForm';
 
 export const metadata: Metadata = {
@@ -10,7 +9,7 @@ export const metadata: Metadata = {
   robots: 'noindex, nofollow'
 };
 
-const ResetPasswordPage: NextPage<{ params: { token: string } }> = ({ params }) => {
+export default function ResetPasswordPage() {
   return (
     <section
       aria-labelledby="reset-password-heading"
@@ -29,10 +28,8 @@ const ResetPasswordPage: NextPage<{ params: { token: string } }> = ({ params }) 
           </p>
         </div>
 
-        <ResetPasswordForm token={params.token} />
+        <ResetPasswordForm />
       </div>
     </section>
   );
-};
-
-export default ResetPasswordPage;
+}
