@@ -2,29 +2,30 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Eye, EyeOff } from 'lucide-react';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 
 export default function ForgotPasswordForm() {
-  const [mounted, setMounted] = useState(false);
+  const router = useRouter();
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
     try {
-      const res = await fetch('/api/auth/forgot-password', {
+      const res = await fetch('/api/auth/verify-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -35,10 +36,10 @@ export default function ForgotPasswordForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to process request');
+        throw new Error(data.error || 'Email not found');
       }
 
-      setSuccess(true);
+      setEmailVerified(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -46,84 +47,183 @@ export default function ForgotPasswordForm() {
     }
   };
 
-  if (!mounted) {
-    return null;
-  }
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
 
-  if (success) {
-    return (
-      <Card variant="primary">
-        <div className="p-6 text-center space-y-4">
-          <h2 className="text-lg font-medium text-foreground">Check Your Email</h2>
-          <p className="text-secondary">
-            If an account exists for {email}, we've sent password reset instructions to that email address.
-          </p>
-          <Link
-            href="/login"
-            className="text-accent hover:text-accent/80 transition-colors"
-          >
-            Return to login
-          </Link>
-        </div>
-      </Card>
-    );
-  }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to reset password');
+      }
+
+      router.push('/login?reset=success');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to reset password');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <Card variant="primary">
-      <form onSubmit={handleSubmit} className="space-y-6 p-6">
-        <div>
-          <label
-            htmlFor="email"
-            className="block text-sm font-medium text-foreground mb-2"
-          >
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            required
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className={`
-              block w-full px-3 py-2
-              bg-background
-              border rounded-lg
-              text-foreground placeholder-secondary
-              focus:outline-none focus:ring-2 focus:ring-accent
-              transition-colors
-              ${error ? 'border-red-500' : 'border-foreground/20 hover:border-foreground/30'}
-            `.trim()}
-            placeholder="you@example.com"
-            disabled={isLoading}
-          />
-        </div>
-
-        {error && (
-          <div className="text-red-500 text-sm" role="alert">
-            {error}
+      {!emailVerified ? (
+        <form onSubmit={handleEmailSubmit} className="space-y-6 p-6">
+          <div>
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-foreground mb-2"
+            >
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={`
+                block w-full px-3 py-2
+                bg-background
+                border rounded-lg
+                text-foreground placeholder-secondary
+                focus:outline-none focus:ring-2 focus:ring-accent
+                transition-colors
+                ${error ? 'border-red-500' : 'border-foreground/20 hover:border-foreground/30'}
+              `.trim()}
+              placeholder="you@example.com"
+              disabled={isLoading}
+            />
           </div>
-        )}
 
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={isLoading}
-          isLoading={isLoading}
-        >
-          {isLoading ? 'Processing...' : 'Reset Password'}
-        </Button>
+          {error && (
+            <div className="text-red-500 text-sm" role="alert">
+              {error}
+            </div>
+          )}
 
-        <div className="text-center text-sm">
-          <Link
-            href="/login"
-            className="text-accent hover:text-accent/80 transition-colors"
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={isLoading}
+            isLoading={isLoading}
           >
-            Back to login
-          </Link>
-        </div>
-      </form>
+            {isLoading ? 'Verifying...' : 'Continue'}
+          </Button>
+        </form>
+      ) : (
+        <form onSubmit={handlePasswordReset} className="space-y-6 p-6">
+          <div>
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-foreground mb-2"
+            >
+              New Password
+            </label>
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={`
+                  block w-full px-3 py-2
+                  bg-background
+                  border rounded-lg
+                  text-foreground placeholder-secondary
+                  focus:outline-none focus:ring-2 focus:ring-accent
+                  transition-colors
+                  ${error ? 'border-red-500' : 'border-foreground/20 hover:border-foreground/30'}
+                `.trim()}
+                placeholder="••••••••"
+                disabled={isLoading}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-secondary hover:text-foreground"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label
+              htmlFor="confirmPassword"
+              className="block text-sm font-medium text-foreground mb-2"
+            >
+              Confirm Password
+            </label>
+            <div className="relative">
+              <input
+                id="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className={`
+                  block w-full px-3 py-2
+                  bg-background
+                  border rounded-lg
+                  text-foreground placeholder-secondary
+                  focus:outline-none focus:ring-2 focus:ring-accent
+                  transition-colors
+                  ${error ? 'border-red-500' : 'border-foreground/20 hover:border-foreground/30'}
+                `.trim()}
+                placeholder="••••••••"
+                disabled={isLoading}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-secondary hover:text-foreground"
+                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+              >
+                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+          </div>
+
+          {error && (
+            <div className="text-red-500 text-sm" role="alert">
+              {error}
+            </div>
+          )}
+
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={isLoading}
+            isLoading={isLoading}
+          >
+            {isLoading ? 'Resetting Password...' : 'Reset Password'}
+          </Button>
+        </form>
+      )}
     </Card>
   );
 }

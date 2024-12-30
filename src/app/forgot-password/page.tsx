@@ -23,7 +23,7 @@ export default function ForgotPasswordPage() {
             Reset Your Password
           </h1>
           <p className="mt-2 text-secondary">
-            Enter your email address and we'll send you instructions to reset your password
+            Enter your email to reset your password
           </p>
         </div>
 
