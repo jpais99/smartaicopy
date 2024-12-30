@@ -1,10 +1,12 @@
 // src/app/login/page.tsx
+
 import { Metadata } from 'next';
+import { Suspense } from 'react';
 import LoginForm from '@/components/sections/auth/LoginForm';
 
 export const metadata: Metadata = {
   title: 'Login - SmartAICopy',
-  description: 'Login to access your SmartAICopy dashboard and optimization history.',
+  description: 'Sign in to your SmartAICopy account',
 };
 
 export default function LoginPage() {
@@ -22,11 +24,13 @@ export default function LoginPage() {
             Welcome Back
           </h1>
           <p className="mt-2 text-secondary">
-            Sign in to access your dashboard and optimization history
+            Sign in to your account to manage your optimizations
           </p>
         </div>
 
-        <LoginForm />
+        <Suspense fallback={<div>Loading...</div>}>
+          <LoginForm />
+        </Suspense>
       </div>
     </section>
   );
